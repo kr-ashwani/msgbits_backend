@@ -1,17 +1,18 @@
-interface baseErrorParams {
-  message: string;
-  name: string;
-  code: string;
-}
-
 class BaseError extends Error {
-  code: string;
+  readonly message: string;
+  readonly name: string;
+  readonly isOperational: boolean;
+  readonly stack?: string;
 
-  constructor(baseErrorParams: baseErrorParams) {
-    super();
-    this.message = baseErrorParams.message;
-    this.name = baseErrorParams.message;
-    this.code = baseErrorParams.code;
+  constructor(message: string, name: string, isOperational: boolean) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+
+    this.message = message;
+    this.name = name;
+    this.isOperational = isOperational;
+
+    Error.captureStackTrace(this);
   }
 }
 

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "noEmitOnError": true,
     "strict": true,
     "module": "commonjs",
     "esModuleInterop": true,
@@ -9,8 +10,7 @@
     "outDir": "build",
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "noEmitOnError": true
+    "noImplicitAny": true
   },
   "lib": ["es2015"]
 }

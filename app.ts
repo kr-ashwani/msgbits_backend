@@ -3,6 +3,8 @@ import express from "express";
 import config from "config";
 import dbConnection from "./utils/dbConnection";
 import logger from "./logger";
+import registerErrorHandler from "./middleware/registerErrorHandler";
+import "./utils/registerProcessUncaughtError";
 
 const PORT = config.get<number>("PORT");
 
@@ -13,7 +15,10 @@ app.get("/hello", (req, res) => {
   res.send("hello");
 });
 
-app.listen(PORT, async () => {
+// last middleware must be error handler
+registerErrorHandler(app);
+
+app.listen(PORT, () => {
   logger.info(`App is running at http://localhost:${PORT}`);
   dbConnection();
 });

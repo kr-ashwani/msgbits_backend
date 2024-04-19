@@ -5,6 +5,7 @@ const LogSchema = new Schema(
   {
     message: { type: String, required: true },
     level: { type: String, required: true },
+    stack: { type: String, default: "" },
   },
   {
     timestamps: {

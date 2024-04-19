@@ -1,6 +1,6 @@
 import { LogSchemaType } from "./../schema/Log";
 import mongoose from "mongoose";
-import DbCollectionMissingError from "../errors/DbCollectionMissingError";
+import DbCollectionMissingError from "../errors/parameterMissingError/DbCollectionMissingError";
 import LogSchema from "../schema/Log";
 
 interface dbLog {
