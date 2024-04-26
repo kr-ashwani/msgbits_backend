@@ -1,8 +1,13 @@
-import logger from "../logger";
+import sendErrToLogger from "./sendErrToLogger";
 
+/**
+ * @param err
+ * This is the centralised Error Handler.
+ * All Error must pass through this centralised handler
+ */
 async function handleError(err: Error): Promise<void> {
-  logger.error(err);
   //await sendMailToAdminIfCritical();
+  sendErrToLogger(err);
   //await sendEventsToSentry();
 }
 

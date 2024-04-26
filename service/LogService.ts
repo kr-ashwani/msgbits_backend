@@ -1,8 +1,7 @@
-import { LogSchemaType } from "./../schema/Log";
 import mongoose from "mongoose";
 import DbCollectionMissingError from "../errors/parameterMissingError/DbCollectionMissingError";
-import LogSchema from "../schema/Log";
-
+import LogSchema, { LogSchemaType } from "../model/Log";
+import handleError from "../errorhandler/ErrorHandler";
 interface dbLog {
   log: Omit<LogSchemaType, "timestamp">;
   db?: string;
@@ -29,13 +28,7 @@ async function writeLogsToDB(data: dbLog) {
 
     await LogModel.create(data.log);
   } catch (err: unknown) {
-    if (err instanceof Error) {
-      //logger.error(err.message);
-      // dont use logger here
-      //logger will call this function to write logs to DB
-      //and try will again catch the same error making an infinite loop
-      console.log("winston unable to write log to DB ", err.message);
-    }
+    if (err instanceof Error) handleError(err);
   }
 }
 

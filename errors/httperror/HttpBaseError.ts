@@ -8,7 +8,7 @@ class HttpBaseError extends BaseError {
     Object.setPrototypeOf(this, new.target.prototype);
 
     this.httpCode = HttpStatusCode[httpCode];
-    Error.captureStackTrace(this);
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 

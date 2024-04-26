@@ -7,7 +7,7 @@ class NotFoundError extends HttpBaseError {
     super(NotFoundError.status, message, NotFoundError.name, true);
     Object.setPrototypeOf(this, new.target.prototype);
 
-    Error.captureStackTrace(this);
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 

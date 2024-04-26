@@ -1,9 +1,19 @@
 import config from "config";
-import { createLogger, format, transports } from "winston";
+import { createLogger, format, transports, addColors } from "winston";
 import path from "path";
 import dbTansport from "./dbTransport";
+import handleError from "../errorhandler/ErrorHandler";
 
 const { combine, timestamp, colorize, printf, errors } = format;
+
+const colors = {
+  error: "red",
+  warn: "yellow",
+  info: "green",
+  http: "magenta",
+  debug: "white",
+};
+addColors(colors);
 
 const MONGODB_URI_LOG = config.get<string>("MONGODB_URI_LOG");
 const devLogger = () => {
@@ -14,10 +24,18 @@ const devLogger = () => {
   return createLogger({
     level: "http",
     format: combine(errors({ stack: true })),
+    exitOnError: (err: Error) => {
+      handleError(err);
+      return true;
+    },
 
     transports: [
       new transports.Console({
-        format: combine(colorize(), timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), myFormat),
+        format: combine(
+          colorize({ all: true }),
+          timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+          myFormat
+        ),
       }),
       new transports.File({
         filename: path.join(__dirname, "./logs/development/error.log"),

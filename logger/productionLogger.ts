@@ -2,6 +2,7 @@ import config from "config";
 import { createLogger, format, transports } from "winston";
 import path from "path";
 import dbTansport from "./dbTransport";
+import handleError from "../errorhandler/ErrorHandler";
 
 const { combine, timestamp, json, errors } = format;
 
@@ -11,6 +12,10 @@ const productionLogger = function () {
   return createLogger({
     level: "error",
     format: combine(errors({ stack: true })),
+    exitOnError: (err: Error) => {
+      handleError(err);
+      return true;
+    },
 
     transports: [
       new transports.Console(),
@@ -20,7 +25,7 @@ const productionLogger = function () {
       new dbTansport({
         db: MONGODB_URI_LOG,
         collection: "msgbits",
-        level: "info",
+        level: "http",
         format: combine(timestamp(), json()),
       }),
     ],

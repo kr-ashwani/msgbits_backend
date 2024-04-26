@@ -4,15 +4,15 @@ class BaseError extends Error {
   readonly isOperational: boolean;
   readonly stack?: string;
 
-  constructor(message: string, name: string, isOperational: boolean) {
+  constructor(message: string, name: string, isOperational: boolean, stack?: string) {
     super(message);
     Object.setPrototypeOf(this, new.target.prototype);
 
     this.message = message;
     this.name = name;
     this.isOperational = isOperational;
-
-    Error.captureStackTrace(this);
+    if (stack) this.stack = stack;
+    else Error.captureStackTrace(this, this.constructor);
   }
 }
 
