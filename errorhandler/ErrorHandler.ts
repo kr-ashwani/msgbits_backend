@@ -1,4 +1,5 @@
 import sendErrToLogger from "./sendErrToLogger";
+import sendMailToAdminIfCritical from "./sendErrToMail";
 
 /**
  * @param err
@@ -6,8 +7,8 @@ import sendErrToLogger from "./sendErrToLogger";
  * All Error must pass through this centralised handler
  */
 async function handleError(err: Error): Promise<void> {
-  //await sendMailToAdminIfCritical();
   sendErrToLogger(err);
+  await sendMailToAdminIfCritical(err);
   //await sendEventsToSentry();
 }
 

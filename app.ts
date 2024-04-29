@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "dotenv/config.js";
 import "./utils/registerProcessUncaughtError";
 import express from "express";
 import config from "config";
@@ -8,8 +8,7 @@ import registerErrorHandler from "./middleware/registerErrorHandler";
 import morganMiddleware from "./logger/morgan";
 import routes from "./routes";
 import swaggerDocs from "./utils/swagger";
-import "./redis/queues/MailQueue";
-import "./redis/workers/MailWorker";
+import "./service/MailService";
 
 const PORT = config.get<number>("PORT");
 

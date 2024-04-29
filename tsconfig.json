@@ -2,7 +2,7 @@
   "compilerOptions": {
     "noEmitOnError": true,
     "strict": true,
-    "module": "commonjs",
+    "module": "CommonJS",
     "esModuleInterop": true,
     "target": "ES2020",
     "moduleResolution": "node",

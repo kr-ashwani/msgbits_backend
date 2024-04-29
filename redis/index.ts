@@ -1,37 +1,27 @@
-// import Redis from "ioredis";
-// import { redisConfig } from "./redisConfig";
-// import logger from "../logger";
-// import handleError from "../errorhandler/ErrorHandler";
+import type { Queue, Worker } from "bullmq";
+import MailQueue from "./queues/MailQueue";
+import MailWorker from "./workers/MailWorker";
+import Mail from "../utilityClasses/mail/Mail";
 
-// class RedisPubSub {
-//   private readonly redis: Redis;
+class RedisPubSub {
+  private static redispubsub: RedisPubSub;
 
-//   constructor(config: { port: number; host: string }) {
-//     this.redis = new Redis(config);
-//     this.registerErrorHandler();
-//     this.connect();
-//   }
-//   public getConnection() {
-//     return this.redis;
-//   }
+  // Mail Queue and Worker
+  mailQueue: Queue<Mail, Mail>;
+  private mailWorker: Worker<Mail, Mail>;
 
-//   private async connect() {
-//     try {
-//       await this.redis.connect();
-//       const connInfo = this.redis.options;
-//       logger.info(`connected to redis instance on ${connInfo.host}:${connInfo.port}`);
-//     } catch (err) {
-//       if (err instanceof Error) handleError(err);
-//     }
-//   }
+  private constructor() {
+    //Initialize Mail Queue and Worker
+    this.mailQueue = new MailQueue<Mail, Mail>().getQueue();
+    this.mailWorker = new MailWorker<Mail, Mail>().getWorker();
+  }
 
-//   private registerErrorHandler() {
-//     this.redis.on("error", function (err) {
-//       handleError(err);
-//     });
-//   }
-// }
+  public static getInstance() {
+    if (this.redispubsub) return this.redispubsub;
+    else return new RedisPubSub();
+  }
+}
 
-// const redisInstance = new RedisPubSub(redisConfig);
+const redisPubSub = RedisPubSub.getInstance();
 
-// export default redisInstance;
+export default redisPubSub;

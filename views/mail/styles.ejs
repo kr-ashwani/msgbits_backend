@@ -1,0 +1,29 @@
+<style>
+  *,
+  *::after,
+  *::before {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  p,
+  h1,
+  h3 {
+    color: #212121;
+  }
+  .bold {
+    font-weight: bold;
+  }
+  .errorDesc {
+    display: flex;
+    gap: 10px;
+    padding-bottom: 5px;
+  }
+  .errorDesc > p:first-child {
+    width: 150px;
+  }
+  .errorDesc > p:last-child {
+    flex-grow: 1;
+    overflow-x: scroll;
+  }
+</style>

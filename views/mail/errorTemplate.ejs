@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <%- include('styles.ejs') %>
+  </head>
+  <body>
+    <p class="bold">Hi Admin,</p>
+    <br />
+    <p class="bold">Error occured while running Msgbits App.</p>
+    <br />
+    <div class="errorLog">
+      <div class="errorDesc">
+        <p>Error Name -</p>
+        <p><%= err.name %></p>
+      </div>
+      <div class="errorDesc">
+        <p>Error Message -</p>
+        <p><%= err.message %></p>
+      </div>
+      <div>
+        <p>Error Stack -</p>
+        <p><%= stack %></p>
+      </div>
+    </div>
+    <br />
+    <p class="bold">Thanks & Regards,</p>
+    <p class="bold">Msgbits Team</p>
+  </body>
+</html>

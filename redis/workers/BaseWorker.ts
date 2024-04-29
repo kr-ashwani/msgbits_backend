@@ -3,7 +3,7 @@ import RedisConnection from "../redisConnection";
 import { Job, Processor, RedisOptions, Worker } from "bullmq";
 import handleError from "../../errorhandler/ErrorHandler";
 
-class BaseWorker<DataType, ResultType> {
+abstract class BaseWorker<DataType, ResultType> {
   private readonly worker;
   private readonly connection;
 
@@ -16,10 +16,12 @@ class BaseWorker<DataType, ResultType> {
   constructor(
     workerName: string,
     queueName: string,
-    processor: string | URL | null | Processor<DataType, ResultType, string>
+    processor?: string | URL | null | Processor<DataType, ResultType, string>
   ) {
     this.connection = new RedisConnection(BaseWorker.workerConfig, workerName);
-    this.worker = new Worker<DataType, ResultType, string>(queueName, processor, {
+    const workerProcessor = processor ? processor : this.workerCallback;
+
+    this.worker = new Worker<DataType, ResultType, string>(queueName, workerProcessor, {
       connection: this.connection.getConnection(),
       useWorkerThreads: true,
     });
@@ -41,6 +43,12 @@ class BaseWorker<DataType, ResultType> {
       handleError(err);
     });
   }
+
+  public getWorker() {
+    return this.worker;
+  }
+
+  protected abstract workerCallback(job: Job<DataType, ResultType, string>): Promise<ResultType>;
 }
 
 export default BaseWorker;

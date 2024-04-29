@@ -1,4 +1,4 @@
-import Mail from "../../classes/mail/Mail";
+import Mail from "../../utilityClasses/mail/Mail";
 import BaseQueue from "./BaseQueue";
 
 class MailQueue<DataType, ResultType> extends BaseQueue<DataType, ResultType> {
@@ -8,6 +8,5 @@ class MailQueue<DataType, ResultType> extends BaseQueue<DataType, ResultType> {
 }
 
 const MailQueueName = MailQueue.name;
-
 export { MailQueueName };
 export default MailQueue;

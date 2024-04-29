@@ -8,18 +8,20 @@ interface MailParams {
   body: string;
   mailSignature: string;
   mainBody: string;
+  html: string;
 }
 
 class Mail {
-  private from: string;
-  private to: string | string[];
-  private cc: string | string[];
-  private bcc: string | string[];
-  private subject: string;
-  private mailSalutation: string;
-  private body: string;
-  private mailSignature: string;
-  private mainBody: string;
+  protected from: string;
+  protected to: string | string[];
+  protected cc: string | string[];
+  protected bcc: string | string[];
+  protected subject: string;
+  protected mailSalutation: string;
+  protected body: string;
+  protected mailSignature: string;
+  protected mainBody: string;
+  protected html: string;
 
   constructor(mail?: MailParams) {
     this.from = mail?.from || "";
@@ -31,33 +33,40 @@ class Mail {
     this.body = mail?.body || "";
     this.mailSignature = mail?.mailSignature || "";
     this.mainBody = mail?.mainBody || "";
+    this.html = mail?.html || "";
   }
-  public setFrom(from: string) {
+  protected setFrom(from: string) {
     this.from = from;
   }
-  public setTo(to: string | string[]) {
+  protected setTo(to: string | string[]) {
     this.to = to;
   }
-  public setCc(cc: string | string[]) {
+  protected setCc(cc: string | string[]) {
     this.cc = cc;
   }
-  public setBcc(bcc: string | string[]) {
+  protected setBcc(bcc: string | string[]) {
     this.bcc = bcc;
   }
-  public setSubject(subject: string) {
+  protected setSubject(subject: string) {
     this.subject = subject;
   }
-  public setMailSalutation(mailSalutation: string) {
+  protected setMailSalutation(mailSalutation: string) {
     this.mailSalutation = mailSalutation;
+    this.mainBody = this.mailSalutation + this.mainBody;
   }
-  public setBody(Body: string) {
-    this.body = this.body;
+  protected setBody(body: string) {
+    this.body = body;
+    this.mainBody += this.body;
   }
-  public setMailSignature(mailSignature: string) {
+  protected setMailSignature(mailSignature: string) {
     this.mailSignature = mailSignature;
+    this.mainBody += this.mailSignature;
   }
-  public setMainBody(mainBody: string) {
+  protected setMainBody(mainBody: string) {
     this.mainBody = mainBody;
+  }
+  protected setHtml(html: string) {
+    this.html = html;
   }
 
   public getFrom() {
@@ -87,6 +96,22 @@ class Mail {
   public getMainBody() {
     return this.mainBody;
   }
+
+  public getMailerObj() {
+    return {
+      from: this.from,
+      to: this.to,
+      cc: this.cc,
+      bcc: this.bcc,
+      subject: this.subject,
+      text: this.mainBody,
+      mailSalutation: this.mailSalutation,
+      body: this.body,
+      mailSignature: this.mailSignature,
+      html: this.html,
+    };
+  }
 }
 
+export { MailParams };
 export default Mail;

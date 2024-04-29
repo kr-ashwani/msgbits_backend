@@ -1,15 +1,16 @@
-import path from "path";
-import Mail from "../../classes/mail/Mail";
 import { MailQueueName } from "../queues/MailQueue";
 import BaseWorker from "./BaseWorker";
+import type { Job } from "bullmq";
 
 class MailWorker<DataType, ResultType> extends BaseWorker<DataType, ResultType> {
-  private static workerHref = path.join(__dirname, "./workerFiles/MailWorker.js");
   constructor() {
-    super(MailWorker.name, MailQueueName, MailWorker.workerHref);
+    super(MailWorker.name, MailQueueName);
+  }
+
+  protected async workerCallback(job: Job<DataType, ResultType, string>): Promise<ResultType> {
+    // console.log(job);
+    return job.returnvalue;
   }
 }
 
-const obj = new MailWorker<Mail, Mail>();
-
-//console.log(obj);
+export default MailWorker;
