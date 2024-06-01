@@ -1,7 +1,7 @@
 import { IUser } from "./../model/user.model";
 import UserModel from "../model/user.model";
 import { DmlDAO } from "./DmlDAO";
-import { HydratedDocument, CreateOptions } from "mongoose";
+import { HydratedDocument, CreateOptions, ProjectionType, QueryOptions } from "mongoose";
 import { RowMapper } from "./RowMapper/RowMapper";
 import { UserInput } from "../schema/user/userSchema";
 import { MathUtil } from "../utils/MathUtil";
@@ -34,6 +34,27 @@ class UserDAO extends DmlDAO<UserInput, IUser> {
       });
 
       const userResultSet = await UserModel.create(userDocs, options);
+
+      userResultSet.map((row) => rowMapper.mapRow(row));
+    } catch (err: any) {
+      throw new Error(err);
+    }
+  }
+  /**
+   *
+   * @param filter
+   * @param rowMapper
+   * @param projection
+   * @param options
+   */
+  async find(
+    filter: Partial<IUser>,
+    rowMapper: RowMapper<HydratedDocument<IUser>>,
+    projection?: ProjectionType<IUser> | null | undefined,
+    options?: QueryOptions<IUser> | null | undefined
+  ) {
+    try {
+      const userResultSet = await UserModel.find(filter, projection, options);
 
       userResultSet.map((row) => rowMapper.mapRow(row));
     } catch (err: any) {

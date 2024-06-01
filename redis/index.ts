@@ -23,8 +23,8 @@ class RedisPubSub {
   }
 
   public static getInstance() {
-    if (this.redispubsub) return this.redispubsub;
-    else return new RedisPubSub();
+    if (!this.redispubsub) this.redispubsub = new RedisPubSub();
+    return this.redispubsub;
   }
 }
 
