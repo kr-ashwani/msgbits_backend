@@ -1,4 +1,4 @@
-import { CreateOptions, HydratedDocument } from "mongoose";
+import { CreateOptions, HydratedDocument, ProjectionType, QueryOptions } from "mongoose";
 import { RowMapper } from "./RowMapper/RowMapper";
 
 /**
@@ -16,7 +16,35 @@ abstract class DmlDAO<T, V> {
     docs: T | T[],
     rowMapper: RowMapper<HydratedDocument<V>>,
     options?: CreateOptions
-  ): void;
+  ): Promise<void>;
+
+  /**
+   *
+   * @param filter
+   * @param rowMapper
+   * @param projection
+   * @param options
+   */
+  abstract find(
+    filter: Partial<T>,
+    rowMapper: RowMapper<HydratedDocument<T>>,
+    projection?: ProjectionType<T> | null | undefined,
+    options?: QueryOptions<T> | null | undefined
+  ): Promise<void>;
+
+  /**
+   *
+   * @param filter
+   * @param update
+   * @param rowMapper
+   * @param options
+   */
+  abstract update(
+    filter: Partial<T>,
+    update: Partial<T>,
+    rowMapper: RowMapper<HydratedDocument<T>>,
+    options?: QueryOptions<T> | null | undefined
+  ): Promise<void>;
 }
 
 export { DmlDAO };

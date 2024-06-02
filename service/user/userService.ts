@@ -4,6 +4,7 @@ import { omit } from "lodash";
 import UserModel, { IUser } from "../../model/user.model";
 import { userDAO } from "../../Dao/UserDAO";
 import { UserRowMapper } from "../../Dao/RowMapper/UserRowMapper";
+import { sendMail } from "../mail/sendMail";
 
 export async function createUser(input: UserInput) {
   try {
@@ -11,6 +12,8 @@ export async function createUser(input: UserInput) {
     await userDAO.create(
       input,
       new UserRowMapper((data) => {
+        // send mail to successfull created account
+        sendMail.sendOTPtoUser(data);
         user.push(data);
       })
     );

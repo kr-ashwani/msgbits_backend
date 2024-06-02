@@ -4,8 +4,10 @@ import { verifyOTPService } from "../../service/user/verifyOTPService";
 
 async function verifyUserByOTPController(req: Request, res: Response) {
   const userVerify = await verifyOTPService(req.body);
-  if (userVerify.success) clientRes.send(res, "OK", userVerify.message, userVerify.data);
-  else clientRes.send(res, "Bad Request", userVerify.message, userVerify.error);
+  if (userVerify.success) {
+    clientRes.sendJWTToken(res, userVerify.data);
+    clientRes.send(res, "OK", userVerify.message, userVerify.data);
+  } else clientRes.send(res, "Bad Request", userVerify.message, userVerify.error);
 }
 
 export default verifyUserByOTPController;

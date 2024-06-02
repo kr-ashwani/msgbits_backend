@@ -1,8 +1,7 @@
 import { Schema, model, Document, InferSchemaType, HydratedDocument, Model } from "mongoose";
 import bcrypt from "bcrypt";
-import { number } from "zod";
 
-export interface IUser {
+export type IUser = {
   email: string;
   name: string;
   password: string;
@@ -12,7 +11,7 @@ export interface IUser {
   authCode: number;
   authCodeValidTime: number;
   comparePassword: (candidatePassword: string) => Promise<boolean>;
-}
+};
 // User Schema
 const userSchema = new Schema<IUser>(
   {

@@ -1,4 +1,6 @@
+import config from "config";
 import { Response } from "express";
+import { jwtService, userJWTPayload } from "../../service/jwt/JwtService";
 
 //Client will receive ClientResponseSuccess schema on successfull response
 interface ClientResponseSuccess {
@@ -63,6 +65,17 @@ class ClientResponse {
     }
 
     res.status(httpCode).json(resObj);
+  }
+  sendJWTToken(res: Response, payload: userJWTPayload) {
+    // refresh_exp_time is in seconds but maxAge accepsts millisecods
+    const refresh_exp_time = config.get<number>("REFRESH_TOKEN_EXP_TIME");
+    const jwtToken = jwtService.createToken(payload);
+    res.cookie("_auth_token", jwtToken, {
+      httpOnly: true,
+      // secure: true,
+      maxAge: refresh_exp_time * 1000,
+      sameSite: "lax",
+    });
   }
 }
 
