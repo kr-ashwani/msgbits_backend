@@ -3,12 +3,13 @@ import logger from "../logger";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import { SocketAuthData } from "./validateSocketConnection";
 
-// Entry point for socket io handlers
+// Entry point for Namespace / socket io handlers
 function registerSocketHandlers(socket: Socket, io: Server) {
   logger.info(
-    `${socket.data.auth.name}-${socket.data.auth.email} connected with socketid - ${socket.id}`
+    `User ${socket.data.auth.name}-${socket.data.auth.email} connected with socketid - ${socket.id}`
   );
 }
+// Entry point for Namespace /admin socket io handlers
 function registerAdminSocketHandlers(
   socket: Socket,
   namespace: Namespace<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketAuthData>

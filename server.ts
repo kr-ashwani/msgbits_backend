@@ -103,12 +103,6 @@ class App {
         password: App.socketUIConfig.password,
       },
     });
-    //admin protected routes
-    this.app.use(
-      "/admin/socketui",
-      asyncWrapper(AdminProtectedRoutes),
-      express.static(path.join(__dirname, "./views/socketio/dist"))
-    );
   }
   //All middlewares except Error Handler middleware
   private initializeMiddlewares() {
