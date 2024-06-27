@@ -5,6 +5,7 @@ import { userService } from "./userService";
 export async function validateAuthTokenService(cookie: any) {
   try {
     const res = new ClientResponse();
+    console.log(cookie);
     if (!(cookie && cookie._auth_token))
       return res.createErrorObj("Authentication Error", "Auth token in cookies is missing");
 

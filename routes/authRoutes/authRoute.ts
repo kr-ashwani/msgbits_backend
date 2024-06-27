@@ -7,10 +7,13 @@ import { createUserSchema } from "../../schema/user/userSchema";
 import loginController from "../../controllers/auth/loginController";
 import logoutController from "../../controllers/auth/logoutController";
 import { validateUserSchema } from "../../schema/user/validateUserSchema";
+import authTokenVerifyController from "../../controllers/auth/authTokenVerifyController";
 
 const express = require("express");
 
 const authRouter = express.Router();
+
+authRouter.route("/authtokenverify").get(authTokenVerifyController);
 
 authRouter
   .route("/signup")

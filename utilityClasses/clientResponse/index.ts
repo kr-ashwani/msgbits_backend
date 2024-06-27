@@ -92,7 +92,7 @@ class ClientResponse {
     else
       resObj = {
         success: false,
-        errCode: "Internal Server Error",
+        errCode: responseObj.success ? "Internal Server Error" : responseObj.errCode,
         message: responseObj.message,
       };
 

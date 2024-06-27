@@ -1,6 +1,6 @@
 import "dotenv/config.js";
 import "./utils/registerProcessUncaughtError";
-import path from "path";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import http from "node:http";
 import express from "express";
@@ -30,8 +30,6 @@ import {
 } from "./socketEventHandlers/validateSocketConnection";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import "./model/role.model";
-import asyncWrapper from "./middleware/asyncWrapper";
-import AdminProtectedRoutes from "./middleware/AdminProtectedRoutes";
 import validateUserAndRefreshToken from "./middleware/validateUserAndRefreshToken";
 
 class App {
@@ -67,12 +65,21 @@ class App {
     this.init();
   }
   private init() {
+    this.initializeCORS();
     this.initializeMiddlewares();
     this.initializeRoutes();
     this.initializeSocketHandlers();
 
     //initialize error handler at End
     this.initializeErrorHandlerMidleware();
+  }
+  private initializeCORS() {
+    this.app.use(
+      cors({
+        origin: ["http://192.168.29.251:3000", "http://localhost:3000"],
+        credentials: true,
+      })
+    );
   }
   //Socket io Redis Adapter
   private initializeSocketHandlers() {
