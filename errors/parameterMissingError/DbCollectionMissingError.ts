@@ -1,6 +1,6 @@
-import BaseError from "../BaseError";
+import { AppError } from "../AppError";
 
-class DbCollectionParameterMissingError extends BaseError {
+class DbCollectionParameterMissingError extends AppError {
   constructor(errMsg: string) {
     super(errMsg, DbCollectionParameterMissingError.name, true);
     Object.setPrototypeOf(this, new.target.prototype);

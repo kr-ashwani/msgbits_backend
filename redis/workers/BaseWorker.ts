@@ -2,7 +2,7 @@ import config from "config";
 import RedisConnection from "../redisConnection";
 import { Job, Processor, RedisOptions, Worker } from "bullmq";
 import handleError from "../../errorhandler/ErrorHandler";
-import { errToBaseError } from "../../errors/BaseError";
+import { errToAppError } from "../../errors/AppError";
 
 abstract class BaseWorker<DataType, ResultType> {
   private readonly worker;
@@ -35,13 +35,13 @@ abstract class BaseWorker<DataType, ResultType> {
       //if error is connection refused then just return
       //connection refused is already handled by RedisConnection
       if (err.message.includes("ECONNREFUSED")) return;
-      handleError(errToBaseError(err, false));
+      handleError(errToAppError(err, false));
     });
   }
   private registerFailedJobHandler(workerName: string) {
     this.worker.on("failed", (job: Job | undefined, err: Error) => {
       if (job) err.message = `Job at ${workerName} failed because ${job.failedReason}`;
-      handleError(errToBaseError(err, true));
+      handleError(errToAppError(err, true));
     });
   }
 

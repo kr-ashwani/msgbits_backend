@@ -1,7 +1,7 @@
 import Redis, { RedisOptions } from "ioredis";
 import logger from "../logger";
 import handleError from "../errorhandler/ErrorHandler";
-import { errToBaseError } from "../errors/BaseError";
+import { errToAppError } from "../errors/AppError";
 
 class RedisConnection {
   private readonly redis: Redis;
@@ -47,7 +47,7 @@ class RedisConnection {
     err.message =
       `${this.loggerPrefix}unable to establish connection with redis instance because ` +
       err.message;
-    handleError(errToBaseError(err, false));
+    handleError(errToAppError(err, false));
   }
 
   /**

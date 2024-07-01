@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import handleError from "../../errorhandler/ErrorHandler";
-import { errToBaseError } from "../../errors/BaseError";
+import { errToAppError } from "../../errors/AppError";
 import DbCollectionMissingError from "../../errors/parameterMissingError/DbCollectionMissingError";
 import LogSchema, { LogSchemaType } from "../../model/log.model";
 
@@ -30,7 +30,7 @@ async function writeLogsToDB(data: dbLog) {
 
     await LogModel.create(data.log);
   } catch (err: unknown) {
-    if (err instanceof Error) handleError(errToBaseError(err, true));
+    if (err instanceof Error) handleError(errToAppError(err, true));
   }
 }
 

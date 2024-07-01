@@ -13,7 +13,6 @@ import routes from "./routes";
 import swaggerDocs from "./utils/swagger";
 import "./service/mail/mailService";
 import RedisPubSub from "./redis";
-import cluster from "cluster";
 import { Server } from "socket.io";
 import { createAdapter } from "@socket.io/redis-streams-adapter";
 import RedisConnection from "./redis/redisConnection";
@@ -139,7 +138,7 @@ class App {
 
   // public method to start Express App
   public run() {
-    this.app.listen(App.PORT, () => this.appHandler());
+    this.server.listen(App.PORT, () => this.appHandler());
   }
 }
 

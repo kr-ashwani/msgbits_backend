@@ -1,22 +1,21 @@
 import { Request, Response, NextFunction } from "express";
-import BaseError from "../errors/BaseError";
 import { roleService } from "../service/role/roleService";
+import AuthorizationError from "../errors/httperror/AuthorizationError";
+import AuthenticationError from "../errors/httperror/AuthenticationError";
 async function AdminProtectedRoutes(req: Request, res: Response, next: NextFunction) {
-  if (req.authUser) {
-    const response = await roleService.findAdminById({ userId: req.authUser._id });
-    if (response.success) {
-      if (response.data.userRole.role === "admin") return next();
-      throw new BaseError(
-        `user with email ${req.authUser.email} donot have Admin Privilege`,
-        "AdminAurthorizationError"
-      );
-    } else throw new BaseError(response.message, "AdminAurthorizationError");
-  }
+  try {
+    if (req.authUser) {
+      const userRole = await roleService.findAdminById({ userId: req.authUser._id });
 
-  throw new BaseError(
-    "Admin Authorization failed because user is not registered",
-    "AdminAurthorizationError"
-  );
+      if (userRole.role === "admin") return next();
+      else
+        throw new AuthorizationError(
+          `user with email ${req.authUser.email} donot have Admin Privilege`
+        );
+    } else throw new AuthenticationError(`Auth token cookie is missing or tampered`);
+  } catch (err) {
+    next(err);
+  }
 }
 
 export default AdminProtectedRoutes;

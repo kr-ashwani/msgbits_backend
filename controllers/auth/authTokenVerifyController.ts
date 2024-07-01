@@ -1,4 +1,3 @@
-import { resSchemaForModel } from "./../../utilityClasses/ResponseSchemaForModel/index";
 import { Request, Response } from "express";
 import { ClientResponse } from "../../utilityClasses/clientResponse";
 
@@ -8,10 +7,7 @@ async function authTokenVerifyController(req: Request, res: Response) {
     clientRes.send(
       res,
       "OK",
-      clientRes.createSuccessObj(
-        "User Authenticated Successfully",
-        resSchemaForModel.getUser(req.authUser)
-      )
+      clientRes.createSuccessObj("User Authenticated Successfully", req.authUser)
     );
   else
     clientRes.send(

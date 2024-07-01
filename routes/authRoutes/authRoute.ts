@@ -1,6 +1,6 @@
 import { createOTPSchema } from "../../schema/user/OTPSchema";
 import signupController from "../../controllers/auth/signupController";
-import verifyUserByOTPController from "../../controllers/auth/verifyUserByOTP";
+import verifyUserByOTPController from "../../controllers/auth/verifyUserByOTPController";
 import asyncWrapper from "../../middleware/asyncWrapper";
 import validateResource from "../../middleware/validateResource";
 import { createUserSchema } from "../../schema/user/userSchema";

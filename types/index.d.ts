@@ -1,5 +1,4 @@
-import { HydratedDocument, Types } from "mongoose";
-import { IUser } from "../model/user.model";
+import { ResponseUserSchema } from "../responseSchema";
 
 declare global {
   namespace Express {
@@ -9,7 +8,7 @@ declare global {
        * if user is not authenticated then authUser will be null.
        * only if user is authenticated then authUser will contain user info
        */
-      authUser: HydratedDocument<IUser> | null;
+      authUser: ResponseUserSchema | null;
     }
   }
 }

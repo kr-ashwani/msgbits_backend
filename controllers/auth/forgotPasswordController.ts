@@ -3,10 +3,12 @@ import { userService } from "../../service/user/userService";
 import { ClientResponse } from "../../utilityClasses/clientResponse";
 
 export const forgotPasswordController = async (req: Request, res: Response) => {
-  const resObj = await userService.forgotPassword(req.body);
+  const message = await userService.forgotPassword(req.body);
   const clientRes = new ClientResponse();
 
-  if (resObj.success) {
-    clientRes.send(res, "OK", resObj);
-  } else clientRes.send(res, "Bad Request", resObj);
+  clientRes.send(
+    res,
+    "OK",
+    clientRes.createSuccessObj(`Password reset mail has been successfully sent`, message)
+  );
 };

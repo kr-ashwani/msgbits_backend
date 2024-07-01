@@ -3,7 +3,7 @@ import { createLogger, format, transports, addColors } from "winston";
 import path from "path";
 import dbTansport from "./dbTransport";
 import handleError from "../errorhandler/ErrorHandler";
-import { errToBaseError } from "../errors/BaseError";
+import { errToAppError } from "../errors/AppError";
 
 const { combine, timestamp, colorize, printf, errors } = format;
 
@@ -26,7 +26,7 @@ const devLogger = () => {
     level: "http",
     format: combine(errors({ stack: true })),
     exitOnError: (err: Error) => {
-      handleError(errToBaseError(err, true));
+      handleError(errToAppError(err, true));
       return true;
     },
 

@@ -1,9 +1,9 @@
-import { omit } from "lodash";
 import { HydratedDocument, Types } from "mongoose";
 import { roleDAO } from "../../Dao/RoleDAO";
 import { RoleRowMapper } from "../../Dao/RowMapper/RoleRowMapper";
 import { IRole } from "../../model/role.model";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
+import InsufficientRoleError from "../../errors/httperror/InsufficientRoleError";
+import { resSchemaForModel } from "../../responseSchema";
 
 class RoleService {
   async findAdminById(input: { userId: Types.ObjectId }) {
@@ -18,15 +18,11 @@ class RoleService {
         })
       );
 
-      const response = new ClientResponse();
-
       if (role.length !== 1)
-        return response.createErrorObj("Insufficient Role Error", `User has not associated role`);
+        throw new InsufficientRoleError(`User does not required role to access the resource.`);
 
-      return response.createSuccessObj("Role found", {
-        userRole: omit(role[0].toJSON(), "_id", "__v"),
-      });
-    } catch (err: any) {
+      return resSchemaForModel.getRole(role[0]);
+    } catch (err) {
       throw err;
     }
   }

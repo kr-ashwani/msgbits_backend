@@ -1,14 +1,14 @@
-class BaseError extends Error {
+class AppError extends Error {
   readonly message: string;
   readonly name: string;
   readonly isCritical: boolean;
   readonly stack?: string;
 
-  constructor(message: string, name: string, isCritical: boolean = false, err?: Error) {
+  constructor(message: string, name?: string, isCritical: boolean = false, err?: Error) {
     super(message);
 
     this.message = message;
-    this.name = name;
+    this.name = name || new.target.name;
     this.isCritical = isCritical;
     if (err) {
       this.message = err.message;
@@ -19,9 +19,9 @@ class BaseError extends Error {
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
-function errToBaseError(err: Error, isCritical: boolean = false) {
-  return new BaseError("", "", isCritical, err);
+function errToAppError(err: Error, isCritical: boolean = false) {
+  return new AppError("", "", isCritical, err);
 }
 
-export { errToBaseError };
-export default BaseError;
+export { errToAppError };
+export { AppError };

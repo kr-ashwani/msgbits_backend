@@ -1,6 +1,6 @@
-import BaseError from "../BaseError";
+import { AppError } from "../AppError";
 
-class HttpBaseError extends BaseError {
+class HttpBaseError extends AppError {
   public readonly httpCode: (typeof HttpStatusCode)[HttpStatus];
 
   constructor(httpCode: HttpStatus, message: string, name: string, isOperational: boolean) {
