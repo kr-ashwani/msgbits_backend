@@ -43,8 +43,10 @@ const HTTPStatusToCode = {
 class ClientResponse {
   private succ_res: { success: true; message: string };
   private fail_res: { success: false; message: string };
+  private res: Response;
 
-  constructor() {
+  constructor(res: Response) {
+    this.res = res;
     this.succ_res = {
       success: true,
       message: "No data to preview",
@@ -77,7 +79,6 @@ class ClientResponse {
    * @param dataOrErr sending data or error
    */
   send<T>(
-    res: Response,
     status: keyof typeof HTTPStatusToCode,
     responseObj: ClientResponseSuccess<T> | ClientResponseError
   ) {
@@ -96,9 +97,9 @@ class ClientResponse {
         message: responseObj.message,
       };
 
-    res.status(httpCode).json(resObj);
+    this.res.status(httpCode).json(resObj);
   }
-  sendJWTToken(res: Response, payload: userJWTPayload) {
+  sendJWTToken(payload: userJWTPayload) {
     // refresh_exp_time is in seconds but maxAge accepsts millisecods
     const refresh_exp_time = config.get<number>("REFRESH_TOKEN_EXP_TIME");
     const jwtToken = jwtService.createToken({
@@ -106,15 +107,19 @@ class ClientResponse {
       email: payload.email,
       createdAt: payload.createdAt,
     });
-    res.cookie("_auth_token", jwtToken, {
+    this.res.cookie("_auth_token", jwtToken, {
       httpOnly: true,
       // secure: true,
       maxAge: refresh_exp_time * 1000,
       sameSite: "lax",
     });
   }
-  clearAuthJWTToken(res: Response) {
-    res.clearCookie("_auth_token");
+  clearAuthJWTToken() {
+    this.res.clearCookie("_auth_token");
+  }
+  redirectToAuthURL(query: string) {
+    const clientRedirectUrl = config.get<string>("REDIRECT_CLIENT_URL");
+    this.res.redirect(`${clientRedirectUrl}?${query}`);
   }
 }
 

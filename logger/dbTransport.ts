@@ -1,6 +1,6 @@
 import Transport, { TransportStreamOptions } from "winston-transport";
 import type { LogEntry } from "winston";
-import writeLogsToDB from "../service/log/logService";
+import { logService } from "../service/log/logService";
 
 export default class dbTansport extends Transport {
   private db: string | undefined;
@@ -19,7 +19,7 @@ export default class dbTansport extends Transport {
     });
 
     const { level, message, stack, ...meta } = info;
-    writeLogsToDB({
+    logService.writeLogsToDB({
       log: {
         level,
         message,

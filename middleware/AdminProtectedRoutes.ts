@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { roleService } from "../service/role/roleService";
+import { roleService } from "../service/database/role/roleService";
 import AuthorizationError from "../errors/httperror/AuthorizationError";
 import AuthenticationError from "../errors/httperror/AuthenticationError";
 async function AdminProtectedRoutes(req: Request, res: Response, next: NextFunction) {

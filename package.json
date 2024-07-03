@@ -15,6 +15,7 @@
   "dependencies": {
     "@socket.io/admin-ui": "^0.5.1",
     "@socket.io/redis-streams-adapter": "^0.2.2",
+    "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.7.3",
     "config": "^3.3.11",
@@ -23,6 +24,7 @@
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
+    "google-auth-library": "^9.11.0",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",

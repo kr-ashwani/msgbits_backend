@@ -1,30 +1,39 @@
-import { object, string, TypeOf } from "zod";
+import { z } from "zod";
+import { authType } from "../../model/user.model";
 
 export interface UserInput {
   email: string;
   name: string;
   password: string;
+  profilePicture: string;
 }
 
 // validates req.body for new user
-export const createUserSchema = object({
-  body: object({
-    name: string({
-      required_error: "Name is required",
-    }),
-    password: string({
+export const createUserSchema = z.object({
+  name: z.string({
+    required_error: "Name is required",
+  }),
+  password: z
+    .string({
       required_error: "Password is required",
-    }).min(6, "Password too short - should be of 6 characters minimum"),
-    confirmPassword: string({
-      required_error: "confirmPassword is required",
-    }),
-    email: string({
+    })
+    .min(6, "Password too short - should be of 6 characters minimum"),
+  confirmPassword: z.string({
+    required_error: "confirmPassword is required",
+  }),
+  email: z
+    .string({
       required_error: "Email is required",
-    }).email("Not a valid email"),
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "confirmPassword did not match",
-    path: ["confirmPassword"],
+    })
+    .email("Not a valid email"),
+  profilePicture: z.string({
+    required_error: "profile picture is required",
   }),
 });
 
-export type CreateUserInput = Omit<TypeOf<typeof createUserSchema>, "body.confirmPassword">;
+createUserSchema.refine((data) => data.password === data.confirmPassword, {
+  message: "confirmPassword did not match",
+  path: ["confirmPassword"],
+});
+
+export type CreateUserInput = Omit<z.infer<typeof createUserSchema>, "confirmPassword">;

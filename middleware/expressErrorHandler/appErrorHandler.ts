@@ -7,32 +7,19 @@ import InsufficientRoleError from "../../errors/httperror/InsufficientRoleError"
 
 const AppErrorErrorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (res.writableFinished) next(err);
-  const clientRes = new ClientResponse();
   if (err instanceof AppError) {
+    const clientRes = new ClientResponse(res);
     if (err instanceof AuthenticationError)
-      clientRes.send(
-        res,
-        "Bad Request",
-        clientRes.createErrorObj("Authentication Error", err.message)
-      );
+      clientRes.send("Bad Request", clientRes.createErrorObj("Authentication Error", err.message));
     else if (err instanceof AuthorizationError)
-      clientRes.send(
-        res,
-        "Bad Request",
-        clientRes.createErrorObj("Authorization Error", err.message)
-      );
+      clientRes.send("Bad Request", clientRes.createErrorObj("Authorization Error", err.message));
     else if (err instanceof InsufficientRoleError)
       clientRes.send(
-        res,
         "Bad Request",
         clientRes.createErrorObj("Insufficient Role Error", err.message)
       );
     else
-      clientRes.send(
-        res,
-        "Bad Request",
-        clientRes.createErrorObj("Internal Server Error", err.message)
-      );
+      clientRes.send("Bad Request", clientRes.createErrorObj("Internal Server Error", err.message));
   } else next(err);
 };
 

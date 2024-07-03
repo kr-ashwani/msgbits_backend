@@ -4,7 +4,7 @@ import path from "path";
 const adminSocketUIRoute = express.Router();
 
 adminSocketUIRoute.use(
-  "/admin/socketui",
+  "/socketui",
   express.static(path.join(__dirname, "../../views/socketio/dist"))
 );
 

@@ -13,6 +13,7 @@ import {
 import { RowMapper } from "./RowMapper/RowMapper";
 import { UserInput } from "../schema/user/userSchema";
 import { MathUtil } from "../utils/MathUtil";
+import { OAuthUserInput } from "../schema/user/OAuthUserSchema";
 
 type Condition<T> = T | QuerySelector<T | any>;
 type FilterQuery<T> = {
@@ -20,15 +21,15 @@ type FilterQuery<T> = {
 } & RootQuerySelector<T>;
 
 export type userDoc = Omit<IUser, "createdAt" | "updatedAt" | "comparePassword">;
-class UserDAO extends DmlDAO<UserInput, IUser> {
+class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
   /**
    *
-   * @param docs UserInput or UserInput Array
+   * @param docs OAuthUserInput or OAuthUserInput Array
    * @param rowMapper
    * @param options
    */
   async create(
-    docs: UserInput | UserInput[],
+    docs: OAuthUserInput | OAuthUserInput[],
     rowMapper: RowMapper<HydratedDocument<IUser>>,
     options?: CreateOptions
   ) {
@@ -37,11 +38,12 @@ class UserDAO extends DmlDAO<UserInput, IUser> {
       if (!Array.isArray(docs)) docs = [docs];
 
       docs.forEach((doc) => {
-        const isVerified = false;
+        const isVerified = doc.isVerified || false;
         const authCode = MathUtil.generateRandomNumber(100000, 999999);
-        const authCodeValidTime = Date.now() + 5 * 60 * 1000;
+        const authCodeValidTime = doc.isVerified === true ? 0 : Date.now() + 5 * 60 * 1000;
         const authCodeType: "VerifyAccount" = "VerifyAccount";
-        const user = { ...doc, authCodeType, isVerified, authCode, authCodeValidTime };
+        const authType = doc.authType;
+        const user = { ...doc, authCodeType, isVerified, authCode, authCodeValidTime, authType };
         userDocs.push(user);
       });
 

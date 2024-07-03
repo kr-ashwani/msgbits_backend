@@ -1,24 +1,28 @@
 import { HydratedDocument } from "mongoose";
-import { UserInput } from "./../../schema/user/userSchema";
-import { IUser } from "../../model/user.model";
-import { userDAO } from "../../Dao/UserDAO";
-import { UserRowMapper } from "../../Dao/RowMapper/UserRowMapper";
-import { sendMail } from "../mail/sendMail";
-import { MathUtil } from "../../utils/MathUtil";
-import { IresetPassword } from "../../schema/user/resetPasswordSchema";
-import { IforgotPassword } from "../../schema/user/forgotPasswordSchema";
-import AuthenticationError from "../../errors/httperror/AuthenticationError";
-import { resSchemaForModel } from "../../responseSchema";
+import { UserInput } from "../../../schema/user/userSchema";
+import { IUser } from "../../../model/user.model";
+import { userDAO } from "../../../Dao/UserDAO";
+import { UserRowMapper } from "../../../Dao/RowMapper/UserRowMapper";
+import { MathUtil } from "../../../utils/MathUtil";
+import { IresetPassword } from "../../../schema/user/resetPasswordSchema";
+import { IforgotPassword } from "../../../schema/user/forgotPasswordSchema";
+import AuthenticationError from "../../../errors/httperror/AuthenticationError";
+import { resSchemaForModel } from "../../../responseSchema";
+import mailService from "../../mail/mailService";
 
 class UserService {
   async createUser(input: UserInput) {
     try {
       const user: HydratedDocument<IUser>[] = [];
       await userDAO.create(
-        input,
+        {
+          ...input,
+          isVerified: false,
+          authType: ["EmailPassword"],
+        },
         new UserRowMapper((data) => {
           // send mail to successfull created account
-          sendMail.sendOTPtoUser(data);
+          mailService.addOTPmailToQueue(data);
           user.push(data);
         })
       );
@@ -89,7 +93,7 @@ class UserService {
     }
   }
 
-  async forgotPassword(input: IforgotPassword["body"]) {
+  async forgotPassword(input: IforgotPassword) {
     try {
       const user: HydratedDocument<IUser>[] = [];
       await userDAO.update(
@@ -116,14 +120,14 @@ class UserService {
         );
 
       //send password reset mail to userDoc
-      sendMail.sendPasswordResetMail(user[0]);
+      mailService.addPasswordResetMailToQueue(user[0]);
       return `Password reset mail has been successfully sent to ${input.email}. Follow the instructions in the email to reset your password.`;
     } catch (err: any) {
       throw err;
     }
   }
 
-  async resetPassword(input: IresetPassword["body"]) {
+  async resetPassword(input: IresetPassword) {
     try {
       const user: HydratedDocument<IUser>[] = [];
       await userDAO.update(

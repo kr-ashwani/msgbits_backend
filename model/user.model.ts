@@ -1,8 +1,16 @@
-import { Schema, model, Document, InferSchemaType, HydratedDocument, Model } from "mongoose";
+import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
 import { ArrayElement } from "../types";
 
 const authCodeType: ["VerifyAccount", "ResetPassword"] = ["VerifyAccount", "ResetPassword"];
+const authType: ["GoogleOAuth", "FacebookOAuth", "GithubOAuth", "EmailPassword"] = [
+  "GoogleOAuth",
+  "FacebookOAuth",
+  "GithubOAuth",
+  "EmailPassword",
+];
+export type authType = ArrayElement<typeof authType>[];
+
 export type IUser = {
   email: string;
   name: string;
@@ -10,6 +18,8 @@ export type IUser = {
   createdAt: Date;
   updatedAt: Date;
   isVerified: boolean;
+  profilePicture: string;
+  authType: authType;
   authCode: number;
   authCodeValidTime: number;
   authCodeType: ArrayElement<typeof authCodeType>;
@@ -34,6 +44,15 @@ const userSchema = new Schema<IUser>(
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    profilePicture: {
+      type: String,
+      require: true,
+    },
+    authType: {
+      type: [String],
+      enum: authType,
+      required: true,
     },
     authCode: {
       type: Number,

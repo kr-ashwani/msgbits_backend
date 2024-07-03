@@ -7,12 +7,9 @@ import { AnyZodObject } from "zod";
  * @returns void
  */
 const validateResource =
-  (schema: AnyZodObject) => (req: Request, res: Response, next: NextFunction) => {
-    schema.parse({
-      body: req.body,
-      query: req.query,
-      params: req.params,
-    });
+  (schema: AnyZodObject, reqType: "body" | "query" | "params" = "body") =>
+  (req: Request, res: Response, next: NextFunction) => {
+    schema.parse(req[reqType]);
     next();
   };
 

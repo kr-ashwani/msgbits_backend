@@ -1,9 +1,9 @@
 import { HydratedDocument, Types } from "mongoose";
-import { roleDAO } from "../../Dao/RoleDAO";
-import { RoleRowMapper } from "../../Dao/RowMapper/RoleRowMapper";
-import { IRole } from "../../model/role.model";
-import InsufficientRoleError from "../../errors/httperror/InsufficientRoleError";
-import { resSchemaForModel } from "../../responseSchema";
+import { roleDAO } from "../../../Dao/RoleDAO";
+import { RoleRowMapper } from "../../../Dao/RowMapper/RoleRowMapper";
+import { IRole } from "../../../model/role.model";
+import InsufficientRoleError from "../../../errors/httperror/InsufficientRoleError";
+import { resSchemaForModel } from "../../../responseSchema";
 
 class RoleService {
   async findAdminById(input: { userId: Types.ObjectId }) {

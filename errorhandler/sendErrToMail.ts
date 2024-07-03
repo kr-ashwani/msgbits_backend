@@ -1,8 +1,8 @@
-import { sendMail } from "../service/mail/sendMail";
+import mailService from "../service/mail/mailService";
 
 async function sendMailToAdminIfCritical(err: Error) {
   err.stack = getSimplifiedStack(err);
-  sendMail.sendErrorMail(err);
+  mailService.addErrorMailToQueue(err);
 }
 
 function getSimplifiedStack(err: Error) {

@@ -3,9 +3,9 @@ import { ExtendedError } from "socket.io/dist/namespace";
 import cookie from "cookie";
 import { AppError, errToAppError } from "../errors/AppError";
 import handleError from "../errorhandler/ErrorHandler";
-import { validateAuthTokenService } from "../service/user/validateAuthTokenService";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import AuthorizationError from "../errors/httperror/AuthorizationError";
+import { authService } from "../service/database/auth/authService";
 
 export interface SocketAuthData {
   auth: {
@@ -24,7 +24,7 @@ export async function validateSocketConnection(
   try {
     const authCookie = cookie.parse(socket.handshake.headers.cookie || "");
 
-    const { user } = await validateAuthTokenService(authCookie);
+    const { user } = await authService.validateAuthTokenService(authCookie);
     // set auth detail to socket
     socket.data.auth = {
       id: user._id.toString(),

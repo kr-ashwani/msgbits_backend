@@ -1,5 +1,4 @@
-import { Document, Schema, Types, model } from "mongoose";
-import UserModel from "./user.model";
+import { Schema, Types, model } from "mongoose";
 
 export type IRole = {
   role: "admin" | "user";

@@ -9,10 +9,9 @@ const SomethingWentWrongErrorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  const clientRes = new ClientResponse();
+  const clientRes = new ClientResponse(res);
   if (!res.writableFinished)
     clientRes.send(
-      res,
       "Internal Server Error",
       clientRes.createErrorObj("Internal Server Error", "Something went wrong")
     );
