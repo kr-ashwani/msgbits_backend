@@ -47,12 +47,12 @@ const userSchema = new Schema<IUser>(
     },
     profilePicture: {
       type: String,
-      require: true,
+      required: [true, "Profile Picture is required"],
     },
     authType: {
       type: [String],
       enum: authType,
-      required: true,
+      required: [true, "Auth Type is required"],
     },
     authCode: {
       type: Number,

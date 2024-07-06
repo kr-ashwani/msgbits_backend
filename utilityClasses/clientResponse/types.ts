@@ -4,4 +4,5 @@ export type ErrorCode =
   | "Internal Server Error"
   | "Insufficient Role Error"
   | "Authentication Error"
-  | "Authorization Error";
+  | "Authorization Error"
+  | "Email Verification Error";

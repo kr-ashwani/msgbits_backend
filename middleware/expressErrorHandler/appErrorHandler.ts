@@ -4,6 +4,7 @@ import { ClientResponse } from "../../utilityClasses/clientResponse";
 import AuthenticationError from "../../errors/httperror/AuthenticationError";
 import AuthorizationError from "../../errors/httperror/AuthorizationError";
 import InsufficientRoleError from "../../errors/httperror/InsufficientRoleError";
+import EmailVerificationError from "../../errors/httperror/EmailVerificationError";
 
 const AppErrorErrorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (res.writableFinished) next(err);
@@ -17,6 +18,11 @@ const AppErrorErrorHandler = (err: Error, req: Request, res: Response, next: Nex
       clientRes.send(
         "Bad Request",
         clientRes.createErrorObj("Insufficient Role Error", err.message)
+      );
+    else if (err instanceof EmailVerificationError)
+      clientRes.send(
+        "Bad Request",
+        clientRes.createErrorObj("Email Verification Error", err.message)
       );
     else
       clientRes.send("Bad Request", clientRes.createErrorObj("Internal Server Error", err.message));

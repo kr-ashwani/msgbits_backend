@@ -7,7 +7,8 @@ const zodValidationErrorHandler = (err: Error, req: Request, res: Response, next
   if (err instanceof ZodError) {
     const clientRes = new ClientResponse(res);
     const validationError = fromError(err);
-    const failureRes = clientRes.createErrorObj("Validation Error", validationError.toString());
+    const errMsg = validationError.toString().split(":")[1] || validationError.toString();
+    const failureRes = clientRes.createErrorObj("Validation Error", errMsg);
 
     clientRes.send("Bad Request", failureRes);
     return;

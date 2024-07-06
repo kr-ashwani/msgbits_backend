@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { authType } from "../../model/user.model";
 
 export interface UserInput {
   email: string;

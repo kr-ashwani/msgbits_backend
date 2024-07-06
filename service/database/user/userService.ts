@@ -9,6 +9,7 @@ import { IforgotPassword } from "../../../schema/user/forgotPasswordSchema";
 import AuthenticationError from "../../../errors/httperror/AuthenticationError";
 import { resSchemaForModel } from "../../../responseSchema";
 import mailService from "../../mail/mailService";
+import EmailVerificationError from "../../../errors/httperror/EmailVerificationError";
 
 class UserService {
   async createUser(input: UserInput) {
@@ -32,7 +33,7 @@ class UserService {
       throw err;
     }
   }
-
+  // this service should only be used by login controller
   async findAndValidateUser(input: Omit<UserInput, "name">) {
     try {
       const user: HydratedDocument<IUser>[] = [];
@@ -50,10 +51,12 @@ class UserService {
           `User with email ${input.email} is not registered. Try signing up`
         );
 
-      if (!user[0].isVerified)
-        throw new AuthenticationError(
-          `User with email ${input.email} is not verified. Try signing up`
+      if (!user[0].isVerified) {
+        await this.accountVerificationThroughEmail({ email: user[0].email });
+        throw new EmailVerificationError(
+          `User with email ${input.email} is not verified. Please log in and verify your account.`
         );
+      }
 
       const isValidUser = await user[0].comparePassword(input.password);
       //we are sure user will have atleast 1 element
@@ -83,8 +86,8 @@ class UserService {
         );
 
       if (!user[0].isVerified)
-        throw new AuthenticationError(
-          `User with email ${input.email} is not verified. User must verify first`
+        throw new EmailVerificationError(
+          `User with email ${input.email} is not verified. Please Login and verify your account`
         );
 
       return resSchemaForModel.getUser(user[0]);
@@ -96,10 +99,11 @@ class UserService {
   async forgotPassword(input: IforgotPassword) {
     try {
       const user: HydratedDocument<IUser>[] = [];
+      // we will allow both unverified and verified user to reset their password
+      // as Reset passwprd link will be shared through mail only
       await userDAO.update(
         {
           email: input.email,
-          isVerified: true,
         },
         {
           authCode: MathUtil.generateRandomNumber(100000, 999999),
@@ -116,12 +120,46 @@ class UserService {
 
       if (user.length !== 1)
         throw new AuthenticationError(
-          `User with email ${input.email} is not registered or verified. Try signing up`
+          `User with email ${input.email} is not registered. Try signing up`
         );
 
       //send password reset mail to userDoc
       mailService.addPasswordResetMailToQueue(user[0]);
       return `Password reset mail has been successfully sent to ${input.email}. Follow the instructions in the email to reset your password.`;
+    } catch (err: any) {
+      throw err;
+    }
+  }
+
+  async accountVerificationThroughEmail(input: IforgotPassword) {
+    try {
+      const user: HydratedDocument<IUser>[] = [];
+      //send OTP to email for account verification
+      await userDAO.update(
+        {
+          email: input.email,
+        },
+        {
+          authCode: MathUtil.generateRandomNumber(100000, 999999),
+          authCodeValidTime: Date.now() + 5 * 60 * 1000,
+          authCodeType: "VerifyAccount",
+        },
+        new UserRowMapper((data) => {
+          user.push(data);
+        }),
+        {
+          new: true,
+        }
+      );
+
+      if (user.length !== 1)
+        throw new AuthenticationError(
+          `User with email ${input.email} is not registered. Try signing up`
+        );
+
+      //send password reset mail to userDoc
+      mailService.addOTPmailToQueue(user[0]);
+      return `Email Verification mail has been successfully sent to ${input.email}. Follow the instructions in the email to reset your password.`;
     } catch (err: any) {
       throw err;
     }
