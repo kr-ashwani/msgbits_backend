@@ -39,7 +39,7 @@ class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
 
       docs.forEach((doc) => {
         const isVerified = doc.isVerified || false;
-        const authCode = MathUtil.generateRandomNumber(100000, 999999);
+        const authCode = MathUtil.generateSecureRandomNumber(6);
         const authCodeValidTime = doc.isVerified === true ? 0 : Date.now() + 5 * 60 * 1000;
         const authCodeType: "VerifyAccount" = "VerifyAccount";
         const authType = doc.authType;

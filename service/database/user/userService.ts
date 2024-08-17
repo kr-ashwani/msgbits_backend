@@ -106,7 +106,7 @@ class UserService {
           email: input.email,
         },
         {
-          authCode: MathUtil.generateRandomNumber(100000, 999999),
+          authCode: MathUtil.generateSecureRandomNumber(6),
           authCodeValidTime: Date.now() + 30 * 60 * 1000,
           authCodeType: "ResetPassword",
         },
@@ -140,7 +140,7 @@ class UserService {
           email: input.email,
         },
         {
-          authCode: MathUtil.generateRandomNumber(100000, 999999),
+          authCode: MathUtil.generateSecureRandomNumber(6),
           authCodeValidTime: Date.now() + 5 * 60 * 1000,
           authCodeType: "VerifyAccount",
         },
