@@ -19,13 +19,13 @@ import RedisConnection from "./redis/redisConnection";
 import {
   registerSocketHandlers,
   registerAdminSocketHandlers,
-} from "./socketEventHandlers/registerSocketHandlers";
+} from "./socket/EventHandlers/registerSocketHandlers";
 import { instrument } from "@socket.io/admin-ui";
 import os from "os";
 import {
   SocketAuthData,
   validateSocketConnection,
-} from "./socketEventHandlers/validateSocketConnection";
+} from "./socket/EventHandlers/validateSocketConnection";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import "./model/role.model";
 import validateUserAndRefreshToken from "./middleware/validateUserAndRefreshToken";

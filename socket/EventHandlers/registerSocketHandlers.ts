@@ -1,10 +1,10 @@
 import { Socket, Server, Namespace } from "socket.io";
-import logger from "../logger";
+import logger from "../../logger";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import { SocketAuthData } from "./validateSocketConnection";
-import { message } from "../test/messageData";
-import { chatRoom } from "../test/chatRoomData";
-import { chatUser } from "../test/chatUserData";
+import { message } from "../../test/messageData";
+import { chatRoom } from "../../test/chatRoomData";
+import { chatUser } from "../../test/chatUserData";
 
 // Entry point for Namespace / socket io handlers
 function registerSocketHandlers(socket: Socket, io: Server) {
