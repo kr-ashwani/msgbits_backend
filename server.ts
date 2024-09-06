@@ -1,3 +1,4 @@
+import { IOManager } from "./socket/SocketIOManager/IOManager";
 import "dotenv/config.js";
 import "./utils/registerProcessUncaughtError";
 import cors from "cors";
@@ -29,6 +30,8 @@ import {
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import "./model/role.model";
 import validateUserAndRefreshToken from "./middleware/validateUserAndRefreshToken";
+import { SocketManager } from "./socket/SocketIOManager/SocketManager";
+import { SocketService } from "./service/socket/SocketService";
 
 class App {
   private readonly app;
@@ -88,7 +91,7 @@ class App {
     this.io.use(validateSocketConnection);
     // All business logic will be attached to default namepace /
     this.io.on("connection", (socket) => {
-      registerSocketHandlers(socket, this.io);
+      registerSocketHandlers(new SocketService(socket, this.io));
     });
     //socket io ui for admin only
     this.initializeSocketIOadminUI();
@@ -99,7 +102,7 @@ class App {
     // validate admin namespace first
     adminNamespace.use(validateSocketConnection);
     adminNamespace.on("connection", (socket) =>
-      registerAdminSocketHandlers(socket, adminNamespace)
+      registerAdminSocketHandlers(new SocketService(socket, this.io))
     );
     instrument(this.io, {
       serverId: `${os.hostname()}#${process.pid}`,

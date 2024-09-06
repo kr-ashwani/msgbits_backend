@@ -1,40 +1,25 @@
-import { Socket, Server, Namespace } from "socket.io";
 import logger from "../../logger";
-import { DefaultEventsMap } from "socket.io/dist/typed-events";
-import { SocketAuthData } from "./validateSocketConnection";
-import { message } from "../../test/messageData";
-import { chatRoom } from "../../test/chatRoomData";
-import { chatUser } from "../../test/chatUserData";
+import { SocketService } from "../../service/socket/SocketService";
+import { SocketManager } from "../SocketIOManager/SocketManager";
 
 // Entry point for Namespace / socket io handlers
-function registerSocketHandlers(socket: Socket, io: Server) {
-  logger.info(
-    `User ${socket.data.auth.name}-${socket.data.auth.email} connected with socketid - ${socket.id}`
-  );
+function registerSocketHandlers(socketService: SocketService) {
+  logSocketConnection(socketService.getSocket(), "User");
 
-  socket.on("chatroom-op", (payload: any, ack: any) => {
-    console.log(payload, ack);
-    ack({ sucess: true });
-  });
-
-  socket.emit("chatuser-getall", chatUser);
-  socket.emit(
-    "message-chatroom",
-    message.reduce((prev: any, item) => {
-      if (prev[item.chatRoomId]) prev[item.chatRoomId].push(item);
-      else prev[item.chatRoomId] = [item];
-      return prev;
-    }, {})
-  );
-  socket.emit("chatroom-getall", chatRoom);
+  const { chatRoomService, chatUserService, messageService, fileService } =
+    socketService.getChatServices();
 }
 // Entry point for Namespace /admin socket io handlers
-function registerAdminSocketHandlers(
-  socket: Socket,
-  namespace: Namespace<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketAuthData>
-) {
+function registerAdminSocketHandlers(socketService: SocketService) {
+  logSocketConnection(socketService.getSocket(), "Admin");
+}
+
+function logSocketConnection(socket: SocketManager, role: "User" | "Admin") {
   logger.info(
-    `Admin ${socket.data.auth.name}-${socket.data.auth.email} connected with socketid - ${socket.id}`
+    `${role} ${socket.getAuthUser().name}-${
+      socket.getAuthUser().email
+    } connected with socketid - ${socket.getSocketId()}`
   );
 }
+
 export { registerSocketHandlers, registerAdminSocketHandlers };

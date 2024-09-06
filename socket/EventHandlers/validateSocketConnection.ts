@@ -33,6 +33,8 @@ export async function validateSocketConnection(
       isVerified: user.isVerified,
       createdAt: user.createdAt,
     };
+    if (!user.isVerified)
+      throw new AuthorizationError("User is not verified. please verify first.");
     return next();
   } catch (err: any) {
     if (err instanceof AppError) {
