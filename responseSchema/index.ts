@@ -5,7 +5,7 @@ import { IRole } from "../model/role.model";
 
 export type ResponseUserSchema = Pick<
   HydratedDocument<IUser>,
-  "name" | "email" | "isVerified" | "createdAt" | "updatedAt" | "_id"
+  "name" | "email" | "isVerified" | "createdAt" | "updatedAt" | "_id" | "profilePicture"
 >;
 export type ResponseUserAndAuthCodeSchema = Pick<
   HydratedDocument<IUser>,
@@ -14,7 +14,15 @@ export type ResponseUserAndAuthCodeSchema = Pick<
 export type ResponseRoleShema = Pick<HydratedDocument<IRole>, "role" | "userId" | "_id">;
 class ResponseSchemaForModel {
   getUser(userDoc: HydratedDocument<IUser>): ResponseUserSchema {
-    return pick(userDoc, ["name", "email", "isVerified", "createdAt", "updatedAt", "_id"]);
+    return pick(userDoc, [
+      "name",
+      "email",
+      "isVerified",
+      "createdAt",
+      "updatedAt",
+      "_id",
+      "profilePicture",
+    ]);
   }
 
   getUserAndAuthcode(userDoc: HydratedDocument<IUser>): ResponseUserAndAuthCodeSchema {

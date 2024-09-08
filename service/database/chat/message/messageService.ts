@@ -1,3 +1,4 @@
+import { FilterQuery } from "mongoose";
 import { messageDAO } from "../../../../Dao/MessageDAO";
 import { MessageRowMapper } from "../../../../Dao/RowMapper/MessageRowMapper";
 import { IMessage } from "../../../../model/message.model";
@@ -7,15 +8,23 @@ import { fileService } from "../file/fileService";
 class MessageService {
   async getUpdatedMessagesOfChatRoom(
     chatRoomId: string,
-    lastUpdatedTimestamp: string
+    lastUpdatedTimestamp: string | null | undefined
   ): Promise<MessageDTO[]> {
     const messageArr: IMessage[] = [];
 
+    // Prepare the filter object conditionally
+    const filter: FilterQuery<IMessage> = {
+      chatRoomId,
+    };
+
+    // Conditionally include the `updatedAt` filter
+    // get all messages of chatRoom if lastUpdatedTimestamp is not provided
+    if (lastUpdatedTimestamp) {
+      filter.updatedAt = { $gt: lastUpdatedTimestamp };
+    }
+
     await messageDAO.find(
-      {
-        chatRoomId,
-        updatedAt: { $gt: lastUpdatedTimestamp },
-      },
+      filter,
       new MessageRowMapper((message) => {
         messageArr.push(message);
       }),

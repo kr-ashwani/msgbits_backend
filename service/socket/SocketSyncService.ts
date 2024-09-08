@@ -1,4 +1,3 @@
-import { IChatRoom } from "../../model/chatRoom.model";
 import { ChatRoomDTO } from "../../schema/chat/ChatRoomDTOSchema";
 import { MessageDTO } from "../../schema/chat/MessageDTOSchema";
 import { SyncUpdateInput } from "../../schema/chat/SyncUpdateInputSchema";
@@ -22,22 +21,35 @@ export class SocketSyncService {
   private requestForSync() {
     this.socket.emit("sync-update", "ask for updates");
   }
+  /**
+   *
+   * @param payload
+   */
   private async updateChatRoomAndMessages(payload: SyncUpdateInput) {
+    const userId = this.socket.getAuthUser().id;
+
+    const chatRooms = await chatRoomService.getAllChatRoomIdAssociatedWithUserId(userId);
+
     const chatRoomOut: ChatRoomDTO[] = [];
     const messagesOut: { [p in string]: MessageDTO[] } = {};
-    const out = payload.map(async (chatRoomMsgSync) => {
-      const chatRoom = await chatRoomService.getUpdatedChatRoom(
-        chatRoomMsgSync.chatRoomId,
-        chatRoomMsgSync.lastUpdateTimestamp
+
+    for (let i = 0; i < chatRooms.length; i++) {
+      const chatRoomId = chatRooms[i];
+      const clientRoomSyncPayload = payload[chatRoomId];
+
+      const room = await chatRoomService.getUpdatedChatRoom(
+        chatRoomId,
+        clientRoomSyncPayload?.lastUpdateTimestamp
       );
-      chatRoom ? chatRoomOut.push(chatRoom) : null;
+      if (room) chatRoomOut.push(room);
       const messages = await messageService.getUpdatedMessagesOfChatRoom(
-        chatRoomMsgSync.chatRoomId,
-        chatRoomMsgSync.lastMessageTimestamp
+        chatRoomId,
+        clientRoomSyncPayload?.lastMessageTimestamp
       );
-      messagesOut[chatRoomMsgSync.chatRoomId] = messages;
-    });
-    await Promise.all(out);
+      messagesOut[chatRoomId] = messages;
+    }
+
+    //await Promise.all(promisesOut);
     this.socket.emit("sync-updateChatRoomAndMessages", {
       chatRoom: chatRoomOut,
       message: messagesOut,

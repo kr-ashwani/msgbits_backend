@@ -1,11 +1,13 @@
 import { z } from "zod";
 
-export const SyncUpdateInputSchema = z.array(
+export const SyncUpdateInputSchema = z.record(
+  z.string(),
   z.object({
-    chatRoomId: z.string(),
-    lastMessageTimestamp: z.string({
-      required_error: "Last Message timestamp is required",
-    }),
+    lastMessageTimestamp: z
+      .string({
+        required_error: "Last Message timestamp is required",
+      })
+      .nullable(),
     lastUpdateTimestamp: z.string({
       required_error: "ChatRoom last update timestamp is required",
     }),

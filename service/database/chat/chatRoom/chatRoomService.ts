@@ -2,25 +2,46 @@ import { ChatRoomDTO } from "./../../../../schema/chat/ChatRoomDTOSchema";
 import { IChatRoom } from "../../../../model/chatRoom.model";
 import { chatRoomDAO } from "../../../../Dao/ChatRoomDAO";
 import { ChatRoomRowMapper } from "../../../../Dao/RowMapper/ChatRoomRowMapper";
+import { GenericRowMapper } from "../../../../Dao/RowMapper/GenericRowMapper";
+import { FilterQuery } from "mongoose";
 
 class ChatRoomService {
-  async getUpdatedChatRoom(
-    chatRoomId: string,
-    updatedTimestamp: string
-  ): Promise<ChatRoomDTO | null> {
-    const chatRoomArr: IChatRoom[] = [];
+  async getAllChatRoomIdAssociatedWithUserId(userId: string) {
+    const chatRooms: string[] = [];
 
     await chatRoomDAO.find(
       {
-        chatRoomId,
-        updatedAt: { $gt: updatedTimestamp },
+        members: { $in: [userId] },
       },
+      new GenericRowMapper<{ chatRoomId: string }>((data) => {
+        chatRooms.push(data.chatRoomId);
+      }),
+      null,
+      "chatRoomId"
+    );
+
+    return chatRooms;
+  }
+  async getUpdatedChatRoom(
+    chatRoomId: string,
+    updatedTimestamp: string | null | undefined
+  ): Promise<ChatRoomDTO | null> {
+    const chatRoomArr: IChatRoom[] = [];
+
+    const filter: FilterQuery<IChatRoom> = {
+      chatRoomId,
+    };
+    // Conditionally include the `updatedAt` filter
+    // get chatRoom if updatedtimestamp is not mentioned
+    if (updatedTimestamp) {
+      filter.updatedAt = { $gt: updatedTimestamp };
+    }
+
+    await chatRoomDAO.find(
+      filter,
       new ChatRoomRowMapper((chatRoom) => {
         chatRoomArr.push(chatRoom.toObject());
-      }),
-      {
-        sort: { createAt: 1 },
-      }
+      })
     );
 
     return chatRoomArr.length ? this.convertIChatRoomToDTO(chatRoomArr[0]) : null;
