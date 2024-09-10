@@ -6,6 +6,26 @@ import { GenericRowMapper } from "../../../../Dao/RowMapper/GenericRowMapper";
 import mongoose, { FilterQuery } from "mongoose";
 
 class ChatRoomService {
+  async updateLastMessageId(chatRoomId: string, messageId: string, updatedAt: string) {
+    try {
+      let success = false;
+
+      await chatRoomDAO.update(
+        { chatRoomId },
+        {
+          lastMessageId: messageId,
+          updatedAt,
+        },
+        new ChatRoomRowMapper(() => {
+          success = false;
+        })
+      );
+
+      return success;
+    } catch (err) {
+      throw err;
+    }
+  }
   async getChatRoomByID(chatRoomId: string) {
     try {
       let chatRoomArr: IChatRoom[] = [];

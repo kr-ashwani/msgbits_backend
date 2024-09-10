@@ -17,9 +17,10 @@ export interface ChatUserEmitterMapping {
 
 export interface SyncEmitterMapping {
   "sync-update": string;
-  "sync-updateChatRoomAndMessages": {
+  "sync-updateChatRoom:Messages:ChatUsers": {
     chatRoom: ChatRoomDTO[];
     message: { [p in string]: MessageDTO[] };
+    chatUser: ChatUserDTO[];
   };
 }
 
@@ -44,7 +45,7 @@ const ChatUserListenerSchema = {
   "chatuser-update": ChatUserDTOSchema,
 };
 const SyncListenerSchema = {
-  "sync-updateChatRoomAndMessages": SyncUpdateInputSchema,
+  "sync-updateChatRoom:Messages:ChatUsers": SyncUpdateInputSchema,
 };
 
 const ListenerSchema = {

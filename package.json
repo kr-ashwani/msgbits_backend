@@ -6,7 +6,8 @@
     "build": "tsc && npm run copy-files",
     "copy-files": "cp -r ./views ./build",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --files --respawn ./app.ts  "
+    "dev": "ts-node-dev --files --respawn ./app.ts  ",
+    "start": "node ./build/app.js"
   },
   "keywords": [],
   "author": "",

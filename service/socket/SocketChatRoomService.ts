@@ -20,7 +20,7 @@ export class SocketChatRoomService {
 
     // now emit this chatRoomDTO to all participants
     payload.members.forEach((userId) => {
-      this.io.to(userId).emit("chatroom-create", payload);
+      this.socket.to(userId).emit("chatroom-create", payload);
     });
   };
 }

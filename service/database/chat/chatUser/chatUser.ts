@@ -5,6 +5,24 @@ import { IUser } from "../../../../model/user.model";
 import { ChatUserDTO } from "../../../../schema/chat/ChatUserDTOSchema";
 
 class ChatUserService {
+  async getChatUsersCreatedAfterTimestamp(createdAt: string | null): Promise<ChatUserDTO[]> {
+    try {
+      const userArr: HydratedDocument<IUser>[] = [];
+
+      if (!createdAt) return await this.getAllChatUsers();
+
+      await userDAO.find(
+        { createdAt: { $gt: createdAt } },
+        new UserRowMapper((user) => {
+          userArr.push(user);
+        })
+      );
+
+      return this.convertIUserToDTO(userArr);
+    } catch (err) {
+      throw err;
+    }
+  }
   async getAllChatUsers(): Promise<ChatUserDTO[]> {
     try {
       const userArr: HydratedDocument<IUser>[] = [];

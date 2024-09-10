@@ -21,6 +21,9 @@ const ChatRoomDTOBaseSchema = z.object({
   updatedAt: z.string({
     required_error: "updatedAt is required",
   }),
+  lastMessageId: z.string({
+    required_error: "lastMessageId is required",
+  }),
 });
 
 const PrivateChatRoomDTOSchema = ChatRoomDTOBaseSchema.extend({

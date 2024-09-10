@@ -9,7 +9,7 @@ export class SocketChatUserService {
   constructor(socket: SocketManager, io: IOManager) {
     this.socket = socket;
     this.io = io;
-    this.init();
+    //this.init();
   }
 
   init() {

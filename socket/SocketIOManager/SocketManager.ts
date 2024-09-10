@@ -106,4 +106,7 @@ export class SocketManager {
   public leave(room: string) {
     return this.socket.leave(room);
   }
+  public to(room: string | string[]) {
+    return new SocketManager(this.socket.to(room) as any);
+  }
 }

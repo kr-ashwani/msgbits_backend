@@ -4,6 +4,7 @@ import { SyncUpdateInput } from "../../schema/chat/SyncUpdateInputSchema";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
 import { chatRoomService } from "../database/chat/chatRoom/chatRoomService";
+import { chatUserService } from "../database/chat/chatUser/chatUser";
 import { messageService } from "../database/chat/message/messageService";
 
 export class SocketSyncService {
@@ -17,7 +18,7 @@ export class SocketSyncService {
   }
   init() {
     this.requestForSync();
-    this.socket.on("sync-updateChatRoomAndMessages", this.updateChatRoomAndMessages);
+    this.socket.on("sync-updateChatRoom:Messages:ChatUsers", this.updateChatRoomAndMessages);
   }
   private requestForSync() {
     this.socket.emit("sync-update", "ask for updates");
@@ -36,7 +37,7 @@ export class SocketSyncService {
 
     for (let i = 0; i < chatRooms.length; i++) {
       const chatRoomId = chatRooms[i];
-      const clientRoomSyncPayload = payload[chatRoomId];
+      const clientRoomSyncPayload = payload.chatRoom[chatRoomId];
 
       const room = await chatRoomService.getUpdatedChatRoom(
         chatRoomId,
@@ -48,13 +49,17 @@ export class SocketSyncService {
         clientRoomSyncPayload?.lastMessageTimestamp
       );
 
-      messagesOut[chatRoomId] = messages;
+      if (messages.length) messagesOut[chatRoomId] = messages;
     }
 
-    //await Promise.all(promisesOut);
-    this.socket.emit("sync-updateChatRoomAndMessages", {
+    const chatUser = await chatUserService.getChatUsersCreatedAfterTimestamp(
+      payload.lastChatUserCreatedAt
+    );
+
+    this.socket.emit("sync-updateChatRoom:Messages:ChatUsers", {
       chatRoom: chatRoomOut,
       message: messagesOut,
+      chatUser,
     });
   };
 }

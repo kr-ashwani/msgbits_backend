@@ -18,12 +18,20 @@ export class SocketMessageService {
   }
   createMessage = async (payload: MessageDTO) => {
     const success = await messageService.createMessage(payload);
+
+    //update last messageId of chatRoom
+    await chatRoomService.updateLastMessageId(
+      payload.chatRoomId,
+      payload.messageId,
+      payload.updatedAt
+    );
+
     const chatRoom = await chatRoomService.getChatRoomByID(payload.chatRoomId);
 
     // now emit this chatRoomDTO to all participants
     if (chatRoom)
       chatRoom.members.forEach((userId) => {
-        this.io.to(userId).emit("message-create", payload);
+        this.socket.to(userId).emit("message-create", payload);
       });
   };
 }
