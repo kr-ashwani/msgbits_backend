@@ -6,6 +6,42 @@ import { MessageDTO } from "../../../../schema/chat/MessageDTOSchema";
 import { fileService } from "../file/fileService";
 
 class MessageService {
+  async updateDeliveredTo(messageId: string, userId: string) {
+    try {
+      let success = false;
+      await messageDAO.update(
+        { messageId, deliveredTo: { $nin: [userId] } },
+        {
+          $push: { deliveredTo: userId },
+        },
+        new MessageRowMapper(() => {
+          success = true;
+        })
+      );
+
+      return success;
+    } catch (err) {
+      throw err;
+    }
+  }
+  async updateSeenBy(messageId: string, userId: string) {
+    try {
+      let success = false;
+      await messageDAO.update(
+        { messageId, seenBy: { $nin: [userId] } },
+        {
+          $push: { seenBy: userId },
+        },
+        new MessageRowMapper(() => {
+          success = true;
+        })
+      );
+
+      return success;
+    } catch (err) {
+      throw err;
+    }
+  }
   async createMessage(messageDTO: MessageDTO) {
     try {
       let success = false;

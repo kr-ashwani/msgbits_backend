@@ -27,11 +27,11 @@ export class SocketManager {
       const result = ListenerSchema[event].safeParse(payload);
       if (result.success) {
         callback(result.data);
-        ack();
+        if (typeof ack === "function") ack();
       } else {
         console.log(result.error);
         const error = `ValidationError: client did not correctly send ${event} event data`;
-        ack({ success: false, error });
+        if (typeof ack === "function") ack({ success: false, error });
         logger.error(error);
       }
     };
