@@ -8,12 +8,18 @@ import {
   MessageStatusOutput,
 } from "../../schema/chat/MessageStatusInputSchema";
 import { ChatAddNewMember, ChatAddNewMemberSchema } from "../../schema/chat/ChatAddNewMemberSchema";
-import { LeaveChatRoom, LeaveChatRoomSchema } from "../../schema/chat/LeaveChatRoomSchema";
+import {
+  ChatRoomAndMember,
+  ChatRoomAndMemberSchema,
+} from "../../schema/chat/ChatRoomAndMemberSchema";
 
 export interface ChatRoomEmitterMapping {
   "chatroom-create": ChatRoomDTO;
   "chatroom-addNewMembers": ChatAddNewMember;
-  "chatroom-leave": LeaveChatRoom;
+  "chatroom-leave": ChatRoomAndMember;
+  "chatroom-removeUser": ChatRoomAndMember;
+  "chatroom-makeAdmin": ChatRoomAndMember;
+  "chatroom-removeAdmin": ChatRoomAndMember;
 }
 
 export interface MessageEmitterMapping {
@@ -45,7 +51,10 @@ const ChatRoomListenerSchema = {
   "chatroom-update": ChatRoomDTOSchema,
   "chatroom-getall": z.array(ChatRoomDTOSchema),
   "chatroom-addNewMembers": ChatAddNewMemberSchema,
-  "chatroom-leave": LeaveChatRoomSchema,
+  "chatroom-leave": ChatRoomAndMemberSchema,
+  "chatroom-removeUser": ChatRoomAndMemberSchema,
+  "chatroom-makeAdmin": ChatRoomAndMemberSchema,
+  "chatroom-removeAdmin": ChatRoomAndMemberSchema,
 };
 
 const MessageListenerSchema = {

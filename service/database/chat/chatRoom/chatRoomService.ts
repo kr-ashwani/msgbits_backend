@@ -3,15 +3,61 @@ import { IChatRoom } from "../../../../model/chatRoom.model";
 import { chatRoomDAO } from "../../../../Dao/ChatRoomDAO";
 import { ChatRoomRowMapper } from "../../../../Dao/RowMapper/ChatRoomRowMapper";
 import { GenericRowMapper } from "../../../../Dao/RowMapper/GenericRowMapper";
-import mongoose, { FilterQuery } from "mongoose";
+import mongoose, { FilterQuery, UpdateQuery } from "mongoose";
 import { ChatAddNewMember } from "../../../../schema/chat/ChatAddNewMemberSchema";
-import { LeaveChatRoom } from "../../../../schema/chat/LeaveChatRoomSchema";
+import { ChatRoomAndMember } from "../../../../schema/chat/ChatRoomAndMemberSchema";
 
 // userId must be first parameter of all methods
 // It checks requesting user has all privilege
 class ChatRoomService {
+  async modifyChatRoomMember(
+    userId: string,
+    { chatRoomId, memberId }: ChatRoomAndMember,
+    action: "makeAdmin" | "removeAdmin" | "removeUser"
+  ) {
+    try {
+      //user itself is leaving the chatRoom
+      if (userId === memberId) throw new Error("Operation on oneself is not allowed");
+
+      let chatRoom: IChatRoom | null = null;
+
+      const filter: FilterQuery<IChatRoom> = {
+        chatRoomId,
+        members: { $all: [memberId, userId] }, // Ensure both users are part of the chat room
+        admins: userId, // Ensure userId is an admin
+      };
+      const update: UpdateQuery<IChatRoom> = {};
+
+      switch (action) {
+        case "makeAdmin":
+          update.$addToSet = { admins: memberId }; // Avoid adding duplicates with $addToSet
+          break;
+        case "removeAdmin":
+          update.$pull = { admins: memberId }; // Remove memberId from admins
+          break;
+        case "removeUser":
+          update.$pull = { members: memberId, admins: memberId }; // Remove from both members and admins
+          break;
+      }
+
+      await chatRoomDAO.update(
+        filter,
+        update,
+        new ChatRoomRowMapper((result) => {
+          chatRoom = result.toObject();
+        }),
+        {
+          new: true,
+        }
+      );
+
+      return chatRoom ? this.convertIChatRoomToDTO(chatRoom) : null;
+    } catch (err) {
+      throw err;
+    }
+  }
   // remove user from chatRoom
-  async leaveChatRoom(userId: string, { chatRoomId, memberId }: LeaveChatRoom) {
+  async leaveChatRoom(userId: string, { chatRoomId, memberId }: ChatRoomAndMember) {
     try {
       //user itself is leaving the chatRoom
       if (userId !== memberId) throw new Error("user id mismatch ");

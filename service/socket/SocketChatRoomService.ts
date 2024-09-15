@@ -1,10 +1,11 @@
 import { IUser } from "../../model/user.model";
 import { ChatAddNewMember } from "../../schema/chat/ChatAddNewMemberSchema";
+import { ChatRoomAndMember } from "../../schema/chat/ChatRoomAndMemberSchema";
 import { ChatRoomDTO } from "../../schema/chat/ChatRoomDTOSchema";
-import { LeaveChatRoom } from "../../schema/chat/LeaveChatRoomSchema";
 import { SocketAuthData } from "../../socket/EventHandlers/validateSocketConnection";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
+import { ChatRoomEmitterMapping } from "../../socket/SocketIOManager/types";
 import { chatRoomService } from "../database/chat/chatRoom/chatRoomService";
 import { messageService } from "../database/chat/message/messageService";
 
@@ -25,6 +26,15 @@ export class SocketChatRoomService {
     this.socket.on("chatroom-create", this.createChatUser);
     this.socket.on("chatroom-addNewMembers", this.addNewMember);
     this.socket.on("chatroom-leave", this.leaveChatRoom);
+    this.socket.on("chatroom-makeAdmin", (payload) =>
+      this.chatRoomMemberOperation("makeAdmin", payload)
+    );
+    this.socket.on("chatroom-removeAdmin", (payload) =>
+      this.chatRoomMemberOperation("removeAdmin", payload)
+    );
+    this.socket.on("chatroom-removeUser", (payload) =>
+      this.chatRoomMemberOperation("removeUser", payload)
+    );
   }
 
   createChatUser = async (chatRoomDTO: ChatRoomDTO) => {
@@ -62,16 +72,63 @@ export class SocketChatRoomService {
     });
   };
 
-  leaveChatRoom = async (leaveChatRoom: LeaveChatRoom) => {
-    if (leaveChatRoom.memberId !== this.userId) throw new Error("user id mismatch ");
+  leaveChatRoom = async (chatRoomAndMember: ChatRoomAndMember) => {
+    if (chatRoomAndMember.memberId !== this.userId) throw new Error("user id mismatch ");
 
-    const chatRoom = await chatRoomService.leaveChatRoom(this.userId, leaveChatRoom);
+    const chatRoom = await chatRoomService.leaveChatRoom(this.userId, chatRoomAndMember);
 
+    this.socket.to(chatRoomAndMember.memberId).emit("chatroom-leave", chatRoomAndMember);
     // now emit this leaveChatRoom to all participants
     if (chatRoom)
       chatRoom.members.forEach((userId) => {
-        this.socket.to(userId).emit("chatroom-leave", leaveChatRoom);
+        this.socket.to(userId).emit("chatroom-leave", chatRoomAndMember);
       });
     else throw Error("Something went wrong while removing user from chatRoom");
+  };
+
+  chatRoomMemberOperation = async (
+    action: "makeAdmin" | "removeAdmin" | "removeUser",
+    chatRoomAndMember: ChatRoomAndMember
+  ) => {
+    let chatRoom: ChatRoomDTO | null = null;
+    let event: keyof ChatRoomEmitterMapping | null = null;
+
+    switch (action) {
+      case "makeAdmin":
+        chatRoom = await chatRoomService.modifyChatRoomMember(
+          this.userId,
+          chatRoomAndMember,
+          "makeAdmin"
+        );
+        event = "chatroom-makeAdmin";
+        break;
+      case "removeAdmin":
+        chatRoom = await chatRoomService.modifyChatRoomMember(
+          this.userId,
+          chatRoomAndMember,
+          "removeAdmin"
+        );
+        event = "chatroom-removeAdmin";
+        break;
+      case "removeUser":
+        chatRoom = await chatRoomService.modifyChatRoomMember(
+          this.userId,
+          chatRoomAndMember,
+          "removeUser"
+        );
+        event = "chatroom-removeUser";
+        break;
+    }
+
+    //emit remove itself event
+    if (action === "removeUser")
+      this.socket.to(chatRoomAndMember.memberId).emit("chatroom-leave", chatRoomAndMember);
+
+    if (chatRoom && event)
+      // now emit this leaveChatRoom to all participants
+      chatRoom.members.forEach((userId) => {
+        this.socket.to(userId).emit(event, chatRoomAndMember);
+      });
+    else throw Error("Something went wrong while performing chatRoom memeber operations");
   };
 }
