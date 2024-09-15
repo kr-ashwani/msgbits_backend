@@ -1,6 +1,7 @@
 import { ChatRoomDTO } from "../../schema/chat/ChatRoomDTOSchema";
 import { MessageDTO } from "../../schema/chat/MessageDTOSchema";
 import { SyncUpdateInput } from "../../schema/chat/SyncUpdateInputSchema";
+import { SocketAuthData } from "../../socket/EventHandlers/validateSocketConnection";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
 import { chatRoomService } from "../database/chat/chatRoom/chatRoomService";
@@ -10,27 +11,26 @@ import { messageService } from "../database/chat/message/messageService";
 export class SocketSyncService {
   private socket: SocketManager;
   private io: IOManager;
+  private user: SocketAuthData["auth"];
+  private userId: string;
 
   constructor(socket: SocketManager, io: IOManager) {
     this.socket = socket;
     this.io = io;
+    this.user = socket.getAuthUser();
+    this.userId = this.user.id;
     this.init();
   }
   init() {
     this.requestForSync();
-    this.socket.on("sync-updateChatRoom:Messages:ChatUsers", this.updateChatRoomAndMessages);
+    this.socket.on("sync-updateChatRoom:Messages:ChatUsers", this.getUpdatedChatRoomAndMessages);
   }
   private requestForSync() {
     this.socket.emit("sync-update", "ask for updates");
   }
-  /**
-   *
-   * @param payload
-   */
-  private updateChatRoomAndMessages = async (payload: SyncUpdateInput) => {
-    const userId = this.socket.getAuthUser().id;
 
-    const chatRooms = await chatRoomService.getAllChatRoomIdAssociatedWithUserId(userId);
+  private getUpdatedChatRoomAndMessages = async (payload: SyncUpdateInput) => {
+    const chatRooms = await chatRoomService.getAllChatRoomIdAssociatedWithUserId(this.userId);
 
     const chatRoomOut: ChatRoomDTO[] = [];
     const messagesOut: { [p in string]: MessageDTO[] } = {};
@@ -40,20 +40,28 @@ export class SocketSyncService {
       const clientRoomSyncPayload = payload.chatRoom[chatRoomId];
 
       const room = await chatRoomService.getUpdatedChatRoom(
+        this.userId,
         chatRoomId,
-        this.getSmallerTime(
-          clientRoomSyncPayload?.lastUpdateTimestamp,
-          payload.socketLastDisconnectedAt
-        )
+        clientRoomSyncPayload
+          ? this.getSmallerTime(
+              clientRoomSyncPayload.lastUpdateTimestamp,
+              payload.socketLastDisconnectedAt
+            )
+          : null
       );
       if (room) chatRoomOut.push(room);
-      const messages = await messageService.getUpdatedMessagesOfChatRoom(
+
+      const lastUpdatedTimestamp = clientRoomSyncPayload
+        ? this.getSmallerTime(
+            clientRoomSyncPayload?.lastMessageTimestamp,
+            payload.socketLastDisconnectedAt
+          )
+        : null;
+      const messages = await messageService.getUpdatedMessagesOfChatRoom({
+        userId: this.userId,
         chatRoomId,
-        this.getSmallerTime(
-          clientRoomSyncPayload?.lastMessageTimestamp,
-          payload.socketLastDisconnectedAt
-        )
-      );
+        lastUpdatedTimestamp,
+      });
 
       if (messages.length) messagesOut[chatRoomId] = messages;
     }
@@ -68,6 +76,7 @@ export class SocketSyncService {
       chatUser,
     });
   };
+
   private getSmallerTime = (timeA: string | null, timeB: string | null): string | null => {
     try {
       if (timeA && timeB) {

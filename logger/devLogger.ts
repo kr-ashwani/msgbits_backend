@@ -1,11 +1,12 @@
 import config from "config";
 import { createLogger, format, transports, addColors } from "winston";
-import path from "path";
 import dbTansport from "./dbTransport";
-import handleError from "../errorhandler/ErrorHandler";
-import { errToAppError } from "../errors/AppError";
+import path from "path";
+import { parseStack } from "../utils/parseStack";
 
-const { combine, timestamp, colorize, printf, errors } = format;
+const { combine, timestamp, colorize, errors } = format;
+
+const MONGODB_URI_LOG = config.get<string>("MONGODB_URI_LOG");
 
 const colors = {
   error: "red",
@@ -16,38 +17,48 @@ const colors = {
 };
 addColors(colors);
 
-const MONGODB_URI_LOG = config.get<string>("MONGODB_URI_LOG");
-const devLogger = () => {
-  const myFormat = printf(({ level, message, timestamp }) => {
-    return `${timestamp} pid:${process.pid} ${level}: ${message}`;
-  });
+// Updated myFormat function
+const myFormat = format((info) => {
+  const { level, message, stack, timestamp } = info;
+  const colorizer = colorize();
+  const timeAndPid = `${timestamp} [pid:${process.pid}]`;
+  let colorizedMessage = `${level.toUpperCase()}: ${message}`;
 
+  if (level === "error" && stack) {
+    const parsedStack = parseStack(stack);
+    if (parsedStack)
+      colorizedMessage += ` (${parsedStack.absoluteFilePath}:${parsedStack.lineNumber})`;
+  }
+
+  colorizedMessage = colorizer.colorize(info.level, colorizedMessage);
+  info[Symbol.for("message")] = `${timeAndPid} ${colorizedMessage}`;
+  return info;
+});
+
+const devLogger = () => {
   return createLogger({
-    level: "http",
-    format: combine(errors({ stack: true })),
+    level: "debug",
+    format: combine(
+      timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+      errors({ stack: true }),
+      myFormat()
+    ),
     exitOnError: (err: Error) => {
-      handleError(errToAppError(err, true));
+      console.log(err.message);
       return true;
     },
-
     transports: [
-      new transports.Console({
-        format: combine(
-          colorize({ all: true }),
-          timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-          myFormat
-        ),
-      }),
+      new transports.Console(),
       new transports.File({
         filename: path.join(__dirname, "./logs/development/error.log"),
         level: "error",
-        format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), myFormat),
+        format: format.uncolorize(),
       }),
       new dbTansport({
         db: MONGODB_URI_LOG,
         collection: "msgbits",
         level: "http",
-        format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), myFormat),
+        format: format.uncolorize(),
       }),
     ],
   });

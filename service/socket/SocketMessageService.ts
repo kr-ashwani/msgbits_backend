@@ -1,5 +1,6 @@
 import { MessageDTO } from "../../schema/chat/MessageDTOSchema";
 import { MessageStatusInput } from "../../schema/chat/MessageStatusInputSchema";
+import { SocketAuthData } from "../../socket/EventHandlers/validateSocketConnection";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
 import { EmitterMapping } from "../../socket/SocketIOManager/types";
@@ -9,10 +10,14 @@ import { messageService } from "../database/chat/message/messageService";
 export class SocketMessageService {
   private socket: SocketManager;
   private io: IOManager;
+  private user: SocketAuthData["auth"];
+  private userId: string;
 
   constructor(socket: SocketManager, io: IOManager) {
     this.socket = socket;
     this.io = io;
+    this.user = socket.getAuthUser();
+    this.userId = this.user.id;
     this.init();
   }
   init() {
@@ -24,27 +29,49 @@ export class SocketMessageService {
       await this.updateMessageStatus("seen", payload);
     });
   }
-  createMessage = async (payload: MessageDTO) => {
-    payload.status = "sent";
-    const success = await messageService.createMessage(payload);
+
+  createMessage = async (messageDTO: MessageDTO) => {
+    messageDTO.status = "sent";
 
     //update last messageId of chatRoom
     await chatRoomService.updateLastMessageId(
-      payload.chatRoomId,
-      payload.messageId,
-      payload.updatedAt
+      this.userId,
+      messageDTO.chatRoomId,
+      messageDTO.messageId,
+      messageDTO.updatedAt
     );
-    if (payload.type !== "info") this.socket.emit("message-sent", payload.messageId);
-    this.emitToAllRoomParticipantsExceptThisSocket(payload.chatRoomId, "message-create", payload);
+
+    const success = await messageService.createMessage({
+      userId: this.userId,
+      chatRoomId: messageDTO.chatRoomId,
+      messageDTO,
+    });
+
+    if (messageDTO.type !== "info") this.socket.emit("message-sent", messageDTO.messageId);
+    this.emitToAllRoomParticipantsExceptThisSocket(
+      messageDTO.chatRoomId,
+      "message-create",
+      messageDTO
+    );
   };
+
   updateMessageStatus = async (action: "delivered" | "seen", payload: MessageStatusInput) => {
     const chatRoomToMsgs: { [p in string]: string[] } = {};
-    const userId = this.socket.getAuthUser().id;
+
     for (let i = 0; i < payload.length; i++) {
       const { chatRoomId, messageId } = payload[i];
       if (action === "delivered")
-        await messageService.updateDeliveredTo(payload[i].messageId, userId);
-      else await messageService.updateSeenBy(payload[i].messageId, userId);
+        await messageService.updateDeliveredTo({
+          chatRoomId,
+          messageId,
+          userId: this.userId,
+        });
+      else
+        await messageService.updateSeenBy({
+          chatRoomId,
+          messageId,
+          userId: this.userId,
+        });
 
       if (chatRoomToMsgs[chatRoomId]) chatRoomToMsgs[chatRoomId].push(messageId);
       else chatRoomToMsgs[chatRoomId] = [messageId];
@@ -56,7 +83,7 @@ export class SocketMessageService {
 
       this.emitToAllRoomParticipantsExceptThisSocket(chatRoomId, event, {
         messageIds,
-        userId,
+        userId: this.userId,
       });
     });
   };
@@ -66,7 +93,7 @@ export class SocketMessageService {
     event: K,
     data: EmitterMapping[K]
   ) => {
-    const chatRoom = await chatRoomService.getChatRoomByID(chatRoomId);
+    const chatRoom = await chatRoomService.getChatRoomByID(this.userId, chatRoomId);
 
     // now emit this chatRoomDTO to all participants
     if (chatRoom)

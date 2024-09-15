@@ -23,7 +23,7 @@ export class SocketRoomService {
   leaveRoom = async () => {
     const room = this.socket.getAuthUser().id;
     this.socket.leave(room);
-    this.logRoomInfo(room, "joined");
+    this.logRoomInfo(room, "left");
   };
   // Get all sockets in a room
   getAllSocketsInRoom = async (roomName: string): Promise<string[]> => {

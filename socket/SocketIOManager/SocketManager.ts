@@ -1,10 +1,10 @@
 import { Socket } from "socket.io";
-import logger from "../../logger";
 import { EmitterMapping, ListenerSchema } from "./types";
 import { SocketAuthData } from "../EventHandlers/validateSocketConnection";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import handleError from "../../errorhandler/ErrorHandler";
 import { AppError, errToAppError } from "../../errors/AppError";
+import DecoratorPermissionError from "../../errors/decoratorError.ts/DecoratorPermission";
 
 export class SocketManager {
   private socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketAuthData>;
@@ -31,20 +31,35 @@ export class SocketManager {
         // wait for the callback to execute
         try {
           await callback(result.data);
-          if (typeof ack === "function") ack();
+          this.handleAckMessage(ack);
         } catch (err) {
-          if (err instanceof Error) handleError(errToAppError(err));
-          else handleError(new AppError("Failure in socket listener"));
-          if (typeof ack === "function") ack({ success: false, error: "Something went wrong" });
+          this.handleAckMessage(ack, err);
         }
       } else {
-        const error = `ValidationError: client did not correctly send ${event} event data`;
-        if (typeof ack === "function") ack({ success: false, error });
-        handleError(new AppError(error));
+        const err = new AppError(
+          `ValidationError: client did not correctly send ${event} event data`
+        );
+        this.handleAckMessage(ack, err);
       }
     };
     this.socket.on(event as string, eventHandler);
     return { event, eventHandler };
+  }
+
+  handleAckMessage(ack: any, err?: any) {
+    if (typeof ack !== "function") return;
+    if (!err) return ack({ success: true });
+
+    if (err instanceof Error) {
+      ack({
+        success: false,
+        error: err instanceof DecoratorPermissionError ? "Permission denied" : err.message,
+      });
+      handleError(errToAppError(err));
+    } else {
+      ack({ success: false, error: "Something went wrong" });
+      handleError(new AppError("Failure in socket listener"));
+    }
   }
 
   public off<K extends keyof ListenerSchema>(

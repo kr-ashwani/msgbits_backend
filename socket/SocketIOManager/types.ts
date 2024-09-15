@@ -8,10 +8,12 @@ import {
   MessageStatusOutput,
 } from "../../schema/chat/MessageStatusInputSchema";
 import { ChatAddNewMember, ChatAddNewMemberSchema } from "../../schema/chat/ChatAddNewMemberSchema";
+import { LeaveChatRoom, LeaveChatRoomSchema } from "../../schema/chat/LeaveChatRoomSchema";
 
 export interface ChatRoomEmitterMapping {
   "chatroom-create": ChatRoomDTO;
   "chatroom-addNewMembers": ChatAddNewMember;
+  "chatroom-leave": LeaveChatRoom;
 }
 
 export interface MessageEmitterMapping {
@@ -43,6 +45,7 @@ const ChatRoomListenerSchema = {
   "chatroom-update": ChatRoomDTOSchema,
   "chatroom-getall": z.array(ChatRoomDTOSchema),
   "chatroom-addNewMembers": ChatAddNewMemberSchema,
+  "chatroom-leave": LeaveChatRoomSchema,
 };
 
 const MessageListenerSchema = {
@@ -72,3 +75,12 @@ export type ChatRoomListenerSchema = typeof ChatRoomListenerSchema;
 export type MessageListenerSchema = typeof MessageListenerSchema;
 export type ChatUserListenerSchema = typeof ChatUserListenerSchema;
 export { ListenerSchema, ChatRoomListenerSchema, MessageListenerSchema, ChatUserListenerSchema };
+
+interface SuccessAckMessage {
+  success: true;
+}
+interface FailureAckMessage {
+  success: false;
+  error: string;
+}
+export type AckMessage = SuccessAckMessage | FailureAckMessage;

@@ -4,9 +4,21 @@ import { MessageRowMapper } from "../../../../Dao/RowMapper/MessageRowMapper";
 import { IMessage } from "../../../../model/message.model";
 import { MessageDTO } from "../../../../schema/chat/MessageDTOSchema";
 import { fileService } from "../file/fileService";
+import { isMember } from "../chatRoom/chatRoomDecorators";
 
+// Each method must accept an object that includes the userId and chatRoomId property.
+// The userId represents the ID of the user attempting to access the chatroom messages.
 class MessageService {
-  async updateDeliveredTo(messageId: string, userId: string) {
+  @isMember()
+  async updateDeliveredTo({
+    userId,
+    messageId,
+    chatRoomId,
+  }: {
+    messageId: string;
+    userId: string;
+    chatRoomId: string;
+  }) {
     try {
       let success = false;
       await messageDAO.update(
@@ -24,7 +36,16 @@ class MessageService {
       throw err;
     }
   }
-  async updateSeenBy(messageId: string, userId: string) {
+  @isMember()
+  async updateSeenBy({
+    messageId,
+    userId,
+    chatRoomId,
+  }: {
+    messageId: string;
+    userId: string;
+    chatRoomId: string;
+  }) {
     try {
       let success = false;
       await messageDAO.update(
@@ -42,7 +63,16 @@ class MessageService {
       throw err;
     }
   }
-  async createMessage(messageDTO: MessageDTO) {
+  @isMember()
+  async createMessage({
+    messageDTO,
+    userId,
+    chatRoomId,
+  }: {
+    messageDTO: MessageDTO;
+    userId: string;
+    chatRoomId: string;
+  }) {
     try {
       let success = false;
       const message = this.convertDTOToIMessage(messageDTO);
@@ -58,10 +88,16 @@ class MessageService {
       throw err;
     }
   }
-  async getUpdatedMessagesOfChatRoom(
-    chatRoomId: string,
-    lastUpdatedTimestamp: string | null | undefined
-  ): Promise<MessageDTO[]> {
+  @isMember()
+  async getUpdatedMessagesOfChatRoom({
+    chatRoomId,
+    lastUpdatedTimestamp,
+    userId,
+  }: {
+    chatRoomId: string;
+    lastUpdatedTimestamp: string | null | undefined;
+    userId: string;
+  }): Promise<MessageDTO[]> {
     try {
       const messageArr: IMessage[] = [];
 

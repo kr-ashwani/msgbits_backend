@@ -4,6 +4,7 @@ import { EmitterMapping, ListenerSchema } from "./types";
 import { SocketManager } from "./SocketManager";
 import handleError from "../../errorhandler/ErrorHandler";
 import { AppError, errToAppError } from "../../errors/AppError";
+import config from "config";
 
 export class IOManager {
   private io: Server;
@@ -31,20 +32,33 @@ export class IOManager {
         // wait for the callback to execute
         try {
           await callback(result.data);
-          if (typeof ack === "function") ack();
+          this.handleAckMessage(ack);
         } catch (err) {
-          if (err instanceof Error) handleError(errToAppError(err));
-          else handleError(new AppError("Failure in socket listener"));
-          if (typeof ack === "function") ack({ success: false, error: "Something went wrong" });
+          this.handleAckMessage(ack, err);
         }
       } else {
-        const error = `ValidationError: client did not correctly send ${event} event data`;
-        if (typeof ack === "function") ack({ success: false, error });
-        handleError(new AppError(error));
+        const err = new AppError(
+          `ValidationError: client did not correctly send ${event} event data`
+        );
+        this.handleAckMessage(ack, err);
       }
     };
     this.io.on(event as string, eventHandler);
     return { event, eventHandler };
+  }
+
+  handleAckMessage(ack: any, err?: any) {
+    const NODE_ENV = config.get("NODE_ENV");
+    if (typeof ack !== "function") return;
+    if (!err) return ack({ success: true });
+
+    if (!(err instanceof Error) || NODE_ENV !== "development") {
+      ack({ success: false, error: "Something went wrong" });
+      handleError(new AppError("Failure in socket listener"));
+    } else {
+      ack({ success: false, error: err.message });
+      handleError(errToAppError(err));
+    }
   }
 
   public off<K extends keyof ListenerSchema>(
