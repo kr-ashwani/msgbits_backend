@@ -21,7 +21,6 @@ export class SocketService {
   ) {
     this.socket = new SocketManager(socket);
     this.io = new IOManager(io);
-    this.init();
   }
 
   init() {

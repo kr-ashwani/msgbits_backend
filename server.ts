@@ -26,7 +26,6 @@ import {
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import "./model/role.model";
 import validateUserAndRefreshToken from "./middleware/validateUserAndRefreshToken";
-import { SocketManager } from "./socket/SocketIOManager/SocketManager";
 import { SocketService } from "./service/socket/SocketService";
 import { AdminSocketService } from "./service/socket/admin/AdminSocketService";
 
@@ -90,6 +89,7 @@ class App {
     this.io.on("connection", (socket) => {
       //Socket Service handles all socket services used by app
       const socketService = new SocketService(socket, this.io);
+      socketService.init();
     });
     //socket io ui for admin only
     this.initializeSocketIOadminUI();
@@ -102,6 +102,7 @@ class App {
     adminNamespace.on("connection", (socket) => {
       //Admin Socket Service handles all socket services used by app
       const adminSocketService = new AdminSocketService(socket, this.io);
+      adminSocketService.init();
     });
     instrument(this.io, {
       serverId: `${os.hostname()}#${process.pid}`,

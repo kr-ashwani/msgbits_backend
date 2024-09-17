@@ -6,6 +6,7 @@ import { GenericRowMapper } from "../../../../Dao/RowMapper/GenericRowMapper";
 import mongoose, { FilterQuery, UpdateQuery } from "mongoose";
 import { ChatAddNewMember } from "../../../../schema/chat/ChatAddNewMemberSchema";
 import { ChatRoomAndMember } from "../../../../schema/chat/ChatRoomAndMemberSchema";
+import { ObjectId } from "mongodb";
 
 // userId must be first parameter of all methods
 // It checks requesting user has all privilege
@@ -23,6 +24,7 @@ class ChatRoomService {
 
       const filter: FilterQuery<IChatRoom> = {
         chatRoomId,
+        createdBy: { $ne: new ObjectId(memberId) }, // member should not be the owner of group
         members: { $all: [memberId, userId] }, // Ensure both users are part of the chat room
         admins: userId, // Ensure userId is an admin
       };

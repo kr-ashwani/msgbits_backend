@@ -17,6 +17,7 @@ export class AdminSocketService {
     this.io = new IOManager(io);
     this.logSocketConnection();
   }
+  init() {}
 
   getSocket() {
     return this.socket;
