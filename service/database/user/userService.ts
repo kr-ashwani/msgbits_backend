@@ -187,6 +187,7 @@ class UserService {
       // if previous query is successful then user will be returned
       if (user.length === 1) {
         //change password
+        // This will trigger the pre-save hook
         user[0].password = input.password;
         user[0].save();
         return resSchemaForModel.getUser(user[0]);
@@ -212,6 +213,29 @@ class UserService {
         failureMsg = "Authentication code has expired";
 
       throw new AuthenticationError(failureMsg);
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async updateLastOnline(input: { userId: string }) {
+    try {
+      const user: HydratedDocument<IUser>[] = [];
+      await userDAO.update(
+        {
+          _id: input.userId,
+          isVerified: true,
+        },
+        {
+          lastOnline: new Date(),
+        },
+        new UserRowMapper((data) => {
+          user.push(data);
+        })
+      );
+
+      if (user.length === 1) return resSchemaForModel.getUser(user[0]);
+      return null;
     } catch (err) {
       throw err;
     }

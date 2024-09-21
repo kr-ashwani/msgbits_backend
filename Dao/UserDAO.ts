@@ -11,9 +11,9 @@ import {
   UpdateQuery,
 } from "mongoose";
 import { RowMapper } from "./RowMapper/RowMapper";
-import { UserInput } from "../schema/user/userSchema";
 import { MathUtil } from "../utils/MathUtil";
 import { OAuthUserInput } from "../schema/user/OAuthUserSchema";
+import randomColor from "randomcolor";
 
 type Condition<T> = T | QuerySelector<T | any>;
 type FilterQuery<T> = {
@@ -43,7 +43,19 @@ class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
         const authCodeValidTime = doc.isVerified === true ? 0 : Date.now() + 5 * 60 * 1000;
         const authCodeType: "VerifyAccount" = "VerifyAccount";
         const authType = doc.authType;
-        const user = { ...doc, authCodeType, isVerified, authCode, authCodeValidTime, authType };
+        const profileColor = randomColor({ luminosity: "bright" });
+        const lastOnline = new Date();
+
+        const user = {
+          ...doc,
+          authCodeType,
+          isVerified,
+          authCode,
+          authCodeValidTime,
+          authType,
+          profileColor,
+          lastOnline,
+        };
         userDocs.push(user);
       });
 

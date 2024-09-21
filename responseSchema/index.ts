@@ -5,7 +5,15 @@ import { IRole } from "../model/role.model";
 
 export type ResponseUserSchema = Pick<
   HydratedDocument<IUser>,
-  "name" | "email" | "isVerified" | "createdAt" | "updatedAt" | "_id" | "profilePicture"
+  | "name"
+  | "email"
+  | "isVerified"
+  | "createdAt"
+  | "updatedAt"
+  | "_id"
+  | "profilePicture"
+  | "profileColor"
+  | "lastOnline"
 >;
 export type ResponseUserAndAuthCodeSchema = Pick<
   HydratedDocument<IUser>,
@@ -22,6 +30,8 @@ class ResponseSchemaForModel {
       "updatedAt",
       "_id",
       "profilePicture",
+      "profileColor",
+      "lastOnline",
     ]);
   }
 

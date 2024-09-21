@@ -62,6 +62,8 @@ class ChatUserService {
       updatedAt: user.updatedAt.toISOString(),
       profilePicture: user.profilePicture,
       _id: user._id.toString(),
+      profileColor: user.profileColor,
+      lastOnline: user.lastOnline.toISOString(),
     };
   }
 }

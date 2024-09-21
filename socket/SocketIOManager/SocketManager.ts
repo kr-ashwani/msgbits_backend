@@ -92,7 +92,7 @@ export class SocketManager {
     this.socket.on("disconnect", callback);
   }
 
-  public getSocketId(): string | undefined {
+  public getSocketId(): string {
     return this.socket.id;
   }
 

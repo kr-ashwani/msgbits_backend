@@ -1,4 +1,3 @@
-import { IOManager } from "./socket/SocketIOManager/IOManager";
 import "dotenv/config.js";
 import "./utils/registerProcessUncaughtError";
 import cors from "cors";

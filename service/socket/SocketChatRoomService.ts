@@ -35,6 +35,7 @@ export class SocketChatRoomService {
     this.socket.on("chatroom-removeUser", (payload) =>
       this.chatRoomMemberOperation("removeUser", payload)
     );
+    this.socket.on("chatroom-memberTyping", this.sendTypingIndicator);
   }
 
   createChatUser = async (chatRoomDTO: ChatRoomDTO) => {
@@ -127,8 +128,22 @@ export class SocketChatRoomService {
     if (chatRoom && event)
       // now emit this leaveChatRoom to all participants
       chatRoom.members.forEach((userId) => {
-        this.socket.to(userId).emit(event, chatRoomAndMember);
+        if (event) this.socket.to(userId).emit(event, chatRoomAndMember);
       });
     else throw Error("Something went wrong while performing chatRoom memeber operations");
+  };
+
+  sendTypingIndicator = async (chatRoomAndMember: ChatRoomAndMember) => {
+    const chatRoom = await chatRoomService.getChatRoomByID(
+      this.userId,
+      chatRoomAndMember.chatRoomId
+    );
+
+    // now emit this typing event to all participants
+    if (chatRoom)
+      chatRoom.members.forEach((userId) => {
+        this.socket.to(userId).emit("chatroom-memberTyping", chatRoomAndMember);
+      });
+    else throw Error("Something went wrong while sending typing event");
   };
 }

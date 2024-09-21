@@ -17,7 +17,9 @@ export type IUser = {
   password: string;
   createdAt: Date;
   updatedAt: Date;
+  lastOnline: Date;
   isVerified: boolean;
+  profileColor: string;
   profilePicture: string;
   authType: authType;
   authCode: number;
@@ -45,6 +47,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    profileColor: {
+      type: String,
+      required: [true, "Profile Color is required"],
+    },
     profilePicture: {
       type: String,
       required: [true, "Profile Picture is required"],
@@ -68,6 +74,10 @@ const userSchema = new Schema<IUser>(
     authCodeValidTime: {
       type: Number,
       required: [true, "Auth Code valid timestamp is missing"],
+    },
+    lastOnline: {
+      type: Date,
+      required: [true, "last online is required"],
     },
   },
   {

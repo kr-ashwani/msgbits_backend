@@ -20,6 +20,7 @@ export interface ChatRoomEmitterMapping {
   "chatroom-removeUser": ChatRoomAndMember;
   "chatroom-makeAdmin": ChatRoomAndMember;
   "chatroom-removeAdmin": ChatRoomAndMember;
+  "chatroom-memberTyping": ChatRoomAndMember;
 }
 
 export interface MessageEmitterMapping {
@@ -30,6 +31,10 @@ export interface MessageEmitterMapping {
 }
 export interface ChatUserEmitterMapping {
   "chatuser-getall": ChatUserDTO[];
+  "chatuser-statusChange": {
+    userId: string | string[];
+    status: string;
+  };
 }
 
 export interface SyncEmitterMapping {
@@ -39,6 +44,7 @@ export interface SyncEmitterMapping {
     message: { [p in string]: MessageDTO[] };
     chatUser: ChatUserDTO[];
   };
+  "sync-allUserStatus": string[];
 }
 
 export type EmitterMapping = ChatRoomEmitterMapping &
@@ -55,6 +61,7 @@ const ChatRoomListenerSchema = {
   "chatroom-removeUser": ChatRoomAndMemberSchema,
   "chatroom-makeAdmin": ChatRoomAndMemberSchema,
   "chatroom-removeAdmin": ChatRoomAndMemberSchema,
+  "chatroom-memberTyping": ChatRoomAndMemberSchema,
 };
 
 const MessageListenerSchema = {
@@ -70,6 +77,8 @@ const ChatUserListenerSchema = {
 };
 const SyncListenerSchema = {
   "sync-updateChatRoom:Messages:ChatUsers": SyncUpdateInputSchema,
+  "sync-allUserStatus": z.null(),
+  heartbeat: z.string(),
 };
 
 const ListenerSchema = {
