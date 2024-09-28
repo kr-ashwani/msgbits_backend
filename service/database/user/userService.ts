@@ -1,4 +1,4 @@
-import { HydratedDocument } from "mongoose";
+import { HydratedDocument, UpdateQuery } from "mongoose";
 import { UserInput } from "../../../schema/user/userSchema";
 import { IUser } from "../../../model/user.model";
 import { userDAO } from "../../../Dao/UserDAO";
@@ -10,6 +10,7 @@ import AuthenticationError from "../../../errors/httperror/AuthenticationError";
 import { resSchemaForModel } from "../../../responseSchema";
 import mailService from "../../mail/mailService";
 import EmailVerificationError from "../../../errors/httperror/EmailVerificationError";
+import { UserUpdateProfile } from "../../../schema/user/UserUpdateProfileSchema";
 
 class UserService {
   async createUser(input: UserInput) {
@@ -229,6 +230,40 @@ class UserService {
         {
           lastOnline: new Date(),
         },
+        new UserRowMapper((data) => {
+          user.push(data);
+        })
+      );
+
+      if (user.length === 1) return resSchemaForModel.getUser(user[0]);
+      return null;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async updateProfile({
+    userId,
+    updatedValue,
+  }: {
+    userId: string;
+    updatedValue: UserUpdateProfile;
+  }) {
+    try {
+      const user: HydratedDocument<IUser>[] = [];
+
+      const update: UpdateQuery<IUser> = {};
+
+      if (updatedValue.updatedName) update.name = updatedValue.updatedName;
+      if (updatedValue.updatedProfilePicture)
+        update.profilePicture = updatedValue.updatedProfilePicture;
+
+      await userDAO.update(
+        {
+          _id: userId,
+          isVerified: true,
+        },
+        update,
         new UserRowMapper((data) => {
           user.push(data);
         })

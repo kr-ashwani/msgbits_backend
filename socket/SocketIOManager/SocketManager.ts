@@ -123,6 +123,9 @@ export class SocketManager {
     // this.Socket.data is already validated
     return this.socket.data.auth;
   }
+  public get broadcast() {
+    return new SocketManager(this.socket.broadcast as any);
+  }
   public join(rooms: string | Array<string>) {
     return this.socket.join(rooms);
   }

@@ -1,7 +1,9 @@
 import handleError from "../../errorhandler/ErrorHandler";
 import { AppError } from "../../errors/AppError";
+import { UserUpdateProfile } from "../../schema/user/UserUpdateProfileSchema";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
+import { userService } from "../database/user/userService";
 import { UserStatusTracker } from "./ChatStatusTracker";
 
 const userStatusTracker = new UserStatusTracker();
@@ -20,6 +22,7 @@ export class SocketChatUserService {
     this.handleUserStatus();
     this.socket.on("heartbeat", this.handleHeartbeat);
     this.socket.on("sync-allUserStatus", this.syncOnlineUsers);
+    this.socket.on("chatuser-updateProfile", this.updateProfile);
   }
 
   async handleUserStatus() {
@@ -47,6 +50,19 @@ export class SocketChatUserService {
     this.io.emit("chatuser-statusChange", {
       userId,
       status,
+    });
+  };
+
+  updateProfile = async (payload: UserUpdateProfile) => {
+    const updatedValue = {
+      userId: this.socket.getAuthUser().id,
+      updatedValue: payload,
+    };
+    await userService.updateProfile(updatedValue);
+    this.socket.broadcast.emit("chatuser-updateProfile", {
+      userId: updatedValue.userId,
+      updatedProfilePicture: payload.updatedProfilePicture,
+      updatedName: payload.updatedProfilePicture,
     });
   };
 
