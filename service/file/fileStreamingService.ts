@@ -1,3 +1,4 @@
+import config from "config";
 import express from "express";
 import crypto from "crypto";
 import fs from "fs";
@@ -5,6 +6,7 @@ import path from "path";
 import { pipeline, Transform } from "stream";
 import { promisify } from "util";
 import busboy from "busboy";
+import { fileService } from "../database/chat/file/fileService";
 
 const pipelineAsync = promisify(pipeline);
 
@@ -13,9 +15,12 @@ class FileStreamingService {
   private storagePath: string;
   private algorithm: string = "aes-256-cbc";
   private blockSize: number = 16;
+  private static ivSize: number = 16;
 
-  constructor(encryptionKey: string, storagePath: string) {
+  constructor(encryptionKey: string) {
     this.encryptionKey = crypto.scryptSync(encryptionKey, "salt", 32);
+    const storagePath = "./encryptedFiles";
+    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
     this.storagePath = storagePath;
   }
   async processFileAndEncrypt(req: express.Request, res: express.Response) {
@@ -23,28 +28,57 @@ class FileStreamingService {
     if (!fileId) res.status(400).send("fileId is missing");
 
     const bb = busboy({ headers: req.headers });
-    //console.log(metadata);
 
     bb.on("file", (name: string, file: any, info: any) => {
       this.encryptAndSave(file, fileId)
         .then(() => {
-          res.json({ fileId, message: "File uploaded successfully" });
+          res.json({ fileId, message: "File uploaded successfully", url: fileId });
         })
         .catch((error) => {
-          console.error("Error during file upload:", error);
           res.status(500).send("Error processing file upload");
         });
     });
 
     bb.on("error", (error: any) => {
-      console.error("Error parsing form:", error);
       res.status(500).send("Error processing upload");
     });
 
     req.pipe(bb);
   }
+  async decryptAndStreamFile(req: express.Request, res: express.Response) {
+    const fileId = req.params.fileId;
+    const metadata = await fileService.getFileById(fileId);
+    if (!metadata) return res.status(400).send("fileId is not accurate");
+    const filePath = path.join(this.storagePath, `${fileId}.enc`);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send("File not found");
+    }
+    res.setHeader("Content-Disposition", `inline; filename="${metadata.fileName}"`);
+    res.setHeader("Content-Type", metadata.fileType || "application/octet-stream");
+
+    const ivSize = FileStreamingService.ivSize;
+    const iv = Buffer.alloc(ivSize);
+    await new Promise<void>((resolve, reject) => {
+      fs.read(fs.openSync(filePath, "r"), iv, 0, ivSize, 0, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    const actualFileSize = metadata.size;
+    const stat = fs.statSync(filePath);
+    const encryptedFileSize = stat.size;
+
+    const range = req.headers.range;
+    if (range)
+      this.decryptAndStreamRangeFiles(req, res, iv, filePath, actualFileSize, encryptedFileSize);
+    else
+      this.decryptAndStreamNonRangeFiles(req, res, iv, filePath, actualFileSize, encryptedFileSize);
+  }
+
   private async encryptAndSave(readStream: NodeJS.ReadableStream, fileId: string): Promise<void> {
-    const iv = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(FileStreamingService.ivSize);
     const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
     const filePath = path.join(this.storagePath, `${fileId}.enc`);
     const writeStream = fs.createWriteStream(filePath);
@@ -97,42 +131,17 @@ class FileStreamingService {
     });
   }
 
-  async decryptAndStream(req: express.Request, res: express.Response): Promise<void> {
-    const metadata = req.query as any;
-    const filePath = path.join(this.storagePath, `${metadata.fileId}.enc`);
-
-    if (!fs.existsSync(filePath)) {
-      res.status(404).send("File not found");
-      return;
-    }
-
-    const stat = fs.statSync(filePath);
-    const encryptedFileSize = stat.size;
-    const actualFileSize = parseInt(metadata.size, 10);
-
-    // Determine content type based on file extension or metadata
-    const fileExtension = path.extname(metadata.originalName || "").toLowerCase();
-    const contentType = metadata.mimeType || "application/octet-stream";
-
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Accept-Ranges", "bytes");
-
-    // Set additional headers for certain file types
-    if (contentType.startsWith("image/")) {
-      res.setHeader("Content-Disposition", `inline; filename="${metadata.originalName}"`);
-    } else if (
-      contentType === "application/pdf" ||
-      contentType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-      contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      res.setHeader("Content-Disposition", `inline; filename="${metadata.originalName}"`);
-    } else {
-      res.setHeader("Content-Disposition", `attachment; filename="${metadata.originalName}"`);
-    }
-
+  private async decryptAndStreamRangeFiles(
+    req: express.Request,
+    res: express.Response,
+    iv: Buffer,
+    filePath: string,
+    actualFileSize: number,
+    encryptedFileSize: number
+  ) {
     const range = req.headers.range;
     let start = 0;
-    let end = actualFileSize - 1;
+    let end = encryptedFileSize - 1;
 
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
@@ -153,14 +162,6 @@ class FileStreamingService {
       start: encryptedStart + ivSize,
       end: encryptedFileSize - 1,
       highWaterMark: 64 * 1024, // 64KB chunks
-    });
-
-    const iv = Buffer.alloc(ivSize);
-    await new Promise<void>((resolve, reject) => {
-      fs.read(fs.openSync(filePath, "r"), iv, 0, ivSize, 0, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
     });
 
     const decryptStream = this.createDecryptStream(this.encryptionKey, iv, encryptedStart);
@@ -197,41 +198,27 @@ class FileStreamingService {
     }
   }
 
-  async handleDownload(req: express.Request, res: express.Response) {
-    const metadata = req.query as any;
-    const fileId = metadata.fileId;
+  private async decryptAndStreamNonRangeFiles(
+    req: express.Request,
+    res: express.Response,
+    iv: Buffer,
+    filePath: string,
+    actualFileSize: number,
+    encryptedFileSize: number
+  ) {
+    const ivSize = FileStreamingService.ivSize;
 
-    if (!metadata.originalName || isNaN(metadata.size) || !metadata.mimeType) {
-      return res.status(400).send("Invalid request parameters");
-    }
-
-    const filePath = path.join(this.storagePath, `${fileId}.enc`);
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).send("File not found");
-    }
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${encodeURIComponent(metadata.originalName)}"`
-    );
-    res.setHeader("Content-Type", metadata.mimeType || "application/octet-stream");
-    res.setHeader("Content-Length", metadata.size);
-
-    const ivSize = 16;
-    const iv = Buffer.alloc(ivSize);
-    await new Promise<void>((resolve, reject) => {
-      fs.read(fs.openSync(filePath, "r"), iv, 0, ivSize, 0, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+    const readStream = fs.createReadStream(filePath, {
+      start: ivSize,
+      end: encryptedFileSize,
+      highWaterMark: 64 * 1024, // 64KB chunks
     });
-
-    const readStream = fs.createReadStream(filePath);
     const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
 
+    res.setHeader("Content-Length", actualFileSize);
+
     try {
-      await pipeline(readStream, decipher, res);
+      await pipelineAsync(readStream, decipher, res);
     } catch (error) {
       console.error("Download failed:", error);
       if (!res.headersSent) {
@@ -242,7 +229,5 @@ class FileStreamingService {
 }
 
 const encryptionKey = process.env.ENCRYPTION_KEY || "xxx";
-const storagePath = "./encryptedFiles";
-if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
-const fileStreamingService = new FileStreamingService(encryptionKey, storagePath);
+const fileStreamingService = new FileStreamingService(encryptionKey);
 export { fileStreamingService };

@@ -2,10 +2,12 @@ import { IUser } from "../../model/user.model";
 import { ChatAddNewMember } from "../../schema/chat/ChatAddNewMemberSchema";
 import { ChatRoomAndMember } from "../../schema/chat/ChatRoomAndMemberSchema";
 import { ChatRoomDTO } from "../../schema/chat/ChatRoomDTOSchema";
+import { GroupChatProfileUpdate } from "../../schema/user/GroupChatProfileUpdate";
 import { SocketAuthData } from "../../socket/EventHandlers/validateSocketConnection";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
 import { ChatRoomEmitterMapping } from "../../socket/SocketIOManager/types";
+import { getFileLinkFromLink } from "../../utils/getFileLinkFromLink";
 import { chatRoomService } from "../database/chat/chatRoom/chatRoomService";
 import { messageService } from "../database/chat/message/messageService";
 
@@ -23,7 +25,7 @@ export class SocketChatRoomService {
     this.init();
   }
   init() {
-    this.socket.on("chatroom-create", this.createChatUser);
+    this.socket.on("chatroom-create", this.createChatRoom);
     this.socket.on("chatroom-addNewMembers", this.addNewMember);
     this.socket.on("chatroom-leave", this.leaveChatRoom);
     this.socket.on("chatroom-makeAdmin", (payload) =>
@@ -36,9 +38,10 @@ export class SocketChatRoomService {
       this.chatRoomMemberOperation("removeUser", payload)
     );
     this.socket.on("chatroom-memberTyping", this.sendTypingIndicator);
+    this.socket.on("chatroom-updateChatNameOrPic", this.updateChatRoomNameOrPicture);
   }
 
-  createChatUser = async (chatRoomDTO: ChatRoomDTO) => {
+  createChatRoom = async (chatRoomDTO: ChatRoomDTO) => {
     const success = await chatRoomService.createChatRoom(chatRoomDTO);
 
     // now emit this chatRoomDTO to all participants
@@ -145,5 +148,26 @@ export class SocketChatRoomService {
         this.socket.to(userId).emit("chatroom-memberTyping", chatRoomAndMember);
       });
     else throw Error("Something went wrong while sending typing event");
+  };
+
+  updateChatRoomNameOrPicture = async (payload: GroupChatProfileUpdate) => {
+    const updatedValue = {
+      userId: this.socket.getAuthUser().id,
+      updatedValue: payload,
+    };
+    const chatRoom = await chatRoomService.updateChatRoomNameOrPicture(updatedValue);
+    if (!chatRoom) throw new Error("Something went wrong while updating chat room name or profile");
+
+    const updatedProfilePicture = payload.updatedProfilePicture
+      ? getFileLinkFromLink(payload.updatedProfilePicture)
+      : null;
+
+    chatRoom.members.forEach((memberId) => {
+      this.socket.to(memberId).emit("chatroom-updateChatNameOrPic", {
+        chatRoomId: payload.chatRoomId,
+        updatedProfilePicture,
+        updatedName: payload.updatedName,
+      });
+    });
   };
 }

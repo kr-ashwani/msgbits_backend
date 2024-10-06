@@ -10,6 +10,7 @@ import {
 import ChatRoomModel, { IChatRoom } from "../model/chatRoom.model";
 import { DmlDAO } from "./DmlDAO";
 import { RowMapper } from "./RowMapper/RowMapper";
+import { getFileLinkFromLink } from "../utils/getFileLinkFromLink";
 
 type Condition<T> = T | QuerySelector<T | any>;
 type FilterQuery<T> = {
@@ -38,7 +39,11 @@ class ChatRoomDAO extends DmlDAO<IChatRoom, IChatRoom> {
 
       const chatRoomResultSet = await ChatRoomModel.create(chatRoomDocs, options);
 
-      chatRoomResultSet.map((row) => rowMapper.mapRow(row));
+      chatRoomResultSet.map((row) => {
+        if (row?.type === "group" && row?.chatRoomPicture)
+          row.chatRoomPicture = getFileLinkFromLink(row.chatRoomPicture);
+        rowMapper.mapRow(row);
+      });
     } catch (err: any) {
       throw err;
     }
@@ -60,7 +65,11 @@ class ChatRoomDAO extends DmlDAO<IChatRoom, IChatRoom> {
     try {
       const chatRoomResultSet = await ChatRoomModel.find(filter, projection, options);
 
-      chatRoomResultSet.map((row) => rowMapper.mapRow(row));
+      chatRoomResultSet.map((row) => {
+        if (row?.type === "group" && row?.chatRoomPicture)
+          row.chatRoomPicture = getFileLinkFromLink(row.chatRoomPicture);
+        rowMapper.mapRow(row);
+      });
     } catch (err: any) {
       throw err;
     }
@@ -80,8 +89,14 @@ class ChatRoomDAO extends DmlDAO<IChatRoom, IChatRoom> {
     options?: QueryOptions<IChatRoom> | null | undefined
   ) {
     try {
-      const messsageResultSet = await ChatRoomModel.findOneAndUpdate(filter, update, options);
-      if (messsageResultSet) rowMapper.mapRow(messsageResultSet);
+      const chatRoomResultSet = await ChatRoomModel.findOneAndUpdate(filter, update, options);
+      if (chatRoomResultSet) {
+        if (chatRoomResultSet?.type === "group" && chatRoomResultSet?.chatRoomPicture)
+          chatRoomResultSet.chatRoomPicture = getFileLinkFromLink(
+            chatRoomResultSet.chatRoomPicture
+          );
+        rowMapper.mapRow(chatRoomResultSet);
+      }
     } catch (err: any) {
       throw err;
     }

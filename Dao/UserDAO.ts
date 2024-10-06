@@ -14,6 +14,7 @@ import { RowMapper } from "./RowMapper/RowMapper";
 import { MathUtil } from "../utils/MathUtil";
 import { OAuthUserInput } from "../schema/user/OAuthUserSchema";
 import randomColor from "randomcolor";
+import { getFileLinkFromLink } from "../utils/getFileLinkFromLink";
 
 type Condition<T> = T | QuerySelector<T | any>;
 type FilterQuery<T> = {
@@ -61,7 +62,10 @@ class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
 
       const userResultSet = await UserModel.create(userDocs, options);
 
-      userResultSet.map((row) => rowMapper.mapRow(row));
+      userResultSet.map((row) => {
+        if (row?.profilePicture) row.profilePicture = getFileLinkFromLink(row.profilePicture);
+        rowMapper.mapRow(row);
+      });
     } catch (err: any) {
       throw err;
     }
@@ -82,7 +86,10 @@ class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
     try {
       const userResultSet = await UserModel.find(filter, projection, options);
 
-      userResultSet.map((row) => rowMapper.mapRow(row));
+      userResultSet.map((row) => {
+        if (row?.profilePicture) row.profilePicture = getFileLinkFromLink(row.profilePicture);
+        rowMapper.mapRow(row);
+      });
     } catch (err: any) {
       throw err;
     }
@@ -103,7 +110,11 @@ class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
   ) {
     try {
       const userResultSet = await UserModel.findOneAndUpdate(filter, update, options);
-      if (userResultSet) rowMapper.mapRow(userResultSet);
+      if (userResultSet) {
+        if (userResultSet?.profilePicture)
+          userResultSet.profilePicture = getFileLinkFromLink(userResultSet.profilePicture);
+        rowMapper.mapRow(userResultSet);
+      }
     } catch (err: any) {
       throw err;
     }

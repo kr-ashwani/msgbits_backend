@@ -7,6 +7,7 @@ import mongoose, { FilterQuery, UpdateQuery } from "mongoose";
 import { ChatAddNewMember } from "../../../../schema/chat/ChatAddNewMemberSchema";
 import { ChatRoomAndMember } from "../../../../schema/chat/ChatRoomAndMemberSchema";
 import { ObjectId } from "mongodb";
+import { GroupChatProfileUpdate } from "../../../../schema/user/GroupChatProfileUpdate";
 
 // userId must be first parameter of all methods
 // It checks requesting user has all privilege
@@ -218,6 +219,39 @@ class ChatRoomService {
 
       await chatRoomDAO.find(
         filter,
+        new ChatRoomRowMapper((chatRoom) => {
+          chatRoomArr.push(chatRoom.toObject());
+        })
+      );
+
+      return chatRoomArr.length ? this.convertIChatRoomToDTO(chatRoomArr[0]) : null;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async updateChatRoomNameOrPicture({
+    userId,
+    updatedValue,
+  }: {
+    userId: string;
+    updatedValue: GroupChatProfileUpdate;
+  }) {
+    try {
+      const chatRoomArr: IChatRoom[] = [];
+      const update: UpdateQuery<IChatRoom> = {};
+
+      if (updatedValue.updatedName) update.chatName = updatedValue.updatedName;
+      if (updatedValue.updatedProfilePicture)
+        update.chatRoomPicture = updatedValue.updatedProfilePicture;
+
+      await chatRoomDAO.update(
+        {
+          chatRoomId: updatedValue.chatRoomId,
+          members: { $in: [userId] },
+          type: "group",
+        },
+        update,
         new ChatRoomRowMapper((chatRoom) => {
           chatRoomArr.push(chatRoom.toObject());
         })

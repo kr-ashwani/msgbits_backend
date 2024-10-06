@@ -16,6 +16,10 @@ import {
   UserUpdateProfile,
   UserUpdateProfileSchema,
 } from "../../schema/user/UserUpdateProfileSchema";
+import {
+  GroupChatProfileUpdate,
+  GroupChatProfileUpdateSchema,
+} from "../../schema/user/GroupChatProfileUpdate";
 
 export interface ChatRoomEmitterMapping {
   "chatroom-create": ChatRoomDTO;
@@ -25,6 +29,7 @@ export interface ChatRoomEmitterMapping {
   "chatroom-makeAdmin": ChatRoomAndMember;
   "chatroom-removeAdmin": ChatRoomAndMember;
   "chatroom-memberTyping": ChatRoomAndMember;
+  "chatroom-updateChatNameOrPic": GroupChatProfileUpdate;
 }
 
 export interface MessageEmitterMapping {
@@ -65,6 +70,7 @@ const ChatRoomListenerSchema = {
   "chatroom-makeAdmin": ChatRoomAndMemberSchema,
   "chatroom-removeAdmin": ChatRoomAndMemberSchema,
   "chatroom-memberTyping": ChatRoomAndMemberSchema,
+  "chatroom-updateChatNameOrPic": GroupChatProfileUpdateSchema,
 };
 
 const MessageListenerSchema = {

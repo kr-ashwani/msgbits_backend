@@ -3,6 +3,7 @@ import { AppError } from "../../errors/AppError";
 import { UserUpdateProfile } from "../../schema/user/UserUpdateProfileSchema";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
+import { getFileLinkFromLink } from "../../utils/getFileLinkFromLink";
 import { userService } from "../database/user/userService";
 import { UserStatusTracker } from "./ChatStatusTracker";
 
@@ -59,10 +60,14 @@ export class SocketChatUserService {
       updatedValue: payload,
     };
     await userService.updateProfile(updatedValue);
+
+    const updatedProfilePicture = payload.updatedProfilePicture
+      ? getFileLinkFromLink(payload.updatedProfilePicture)
+      : null;
     this.socket.broadcast.emit("chatuser-updateProfile", {
       userId: updatedValue.userId,
-      updatedProfilePicture: payload.updatedProfilePicture,
-      updatedName: payload.updatedProfilePicture,
+      updatedProfilePicture,
+      updatedName: payload.updatedName,
     });
   };
 

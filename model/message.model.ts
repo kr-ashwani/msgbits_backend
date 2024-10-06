@@ -46,7 +46,12 @@ const messageSchema = new Schema<IMessage>(
     },
     message: {
       type: String,
-      required: [true, "Message  is required"],
+      required: [
+        function (this: IMessage) {
+          return this.type === "text";
+        },
+        "Message is required for text messages",
+      ],
     },
     senderId: {
       type: String,

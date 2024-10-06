@@ -52,24 +52,9 @@ const fileSchema = new Schema<IFile>(
       type: String,
       required: [true, "File URL is required"],
       trim: true,
-      validate: {
-        validator: function (v: string) {
-          return /^(https?:\/\/\S+)$/.test(v); // Accepts both http and https
-        },
-        message: (props: { value: string }) => `${props.value} is not a valid URL`,
-      },
     },
     dimension: {
       type: Schema.Types.Mixed,
-      validate: {
-        validator: function (this: IFile, v: any) {
-          if (this.fileType.startsWith("image/") || this.fileType.startsWith("video/")) {
-            return v && typeof v.width === "number" && typeof v.height === "number";
-          }
-          return v === null;
-        },
-        message: "Dimensions must be valid numbers for image and video files, or null for others",
-      },
     },
   },
   {

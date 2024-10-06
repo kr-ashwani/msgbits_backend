@@ -11,6 +11,7 @@ import {
 import { DmlDAO } from "./DmlDAO";
 import { RowMapper } from "./RowMapper/RowMapper";
 import FileModel, { IFile } from "../model/file.model";
+import { getFileLinkFromLink } from "../utils/getFileLinkFromLink";
 
 type Condition<T> = T | QuerySelector<T | any>;
 type FilterQuery<T> = {
@@ -39,7 +40,10 @@ class FileDAO extends DmlDAO<IFile, IFile> {
 
       const fileResultSet = await FileModel.create(fileDocs, options);
 
-      fileResultSet.map((row) => rowMapper.mapRow(row));
+      fileResultSet.map((row) => {
+        if (row?.url) row.url = getFileLinkFromLink(row.url);
+        rowMapper.mapRow(row);
+      });
     } catch (err: any) {
       throw err;
     }
@@ -61,7 +65,10 @@ class FileDAO extends DmlDAO<IFile, IFile> {
     try {
       const fileResultSet = await FileModel.find(filter, projection, options);
 
-      fileResultSet.map((row) => rowMapper.mapRow(row));
+      fileResultSet.map((row) => {
+        if (row?.url) row.url = getFileLinkFromLink(row.url);
+        rowMapper.mapRow(row);
+      });
     } catch (err: any) {
       throw err;
     }
@@ -81,8 +88,11 @@ class FileDAO extends DmlDAO<IFile, IFile> {
     options?: QueryOptions<IFile> | null | undefined
   ) {
     try {
-      const messsageResultSet = await FileModel.findOneAndUpdate(filter, update, options);
-      if (messsageResultSet) rowMapper.mapRow(messsageResultSet);
+      const fileResultSet = await FileModel.findOneAndUpdate(filter, update, options);
+      if (fileResultSet) {
+        if (fileResultSet?.url) fileResultSet.url = getFileLinkFromLink(fileResultSet.url);
+        rowMapper.mapRow(fileResultSet);
+      }
     } catch (err: any) {
       throw err;
     }
