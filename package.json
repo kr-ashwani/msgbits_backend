@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && npm run copy-files && npm run copy-env",
-    "copy-files": "xcopy \"views\" \"build\\views\" /E /I /Y",
-    "copy-env": "xcopy \".env\" \"build\\.env\" /Y /C",
+    "build": "tsc && npm run copyBuildFiles",
+    "copyBuildFiles": "ts-node ./utils/copyBuildFiles.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": " ts-node-dev --files --respawn ./app.ts  ",
+    "dev": "ts-node-dev --files --respawn ./app.ts",
     "start": "cross-env NODE_ENV=production node ./build/app.js"
   },
   "keywords": [],
@@ -69,3 +68,4 @@
     "typescript": "^5.4.5"
   }
 }
+    

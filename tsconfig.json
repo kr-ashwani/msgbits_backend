@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "typeRoots": ["./types/index.d.ts"],
+   "typeRoots": ["./types", "./node_modules/@types"],
+    "types": ["node"],
     "noEmitOnError": true,
     "strict": true,
     "module": "CommonJS",
@@ -14,6 +15,10 @@
     "noImplicitAny": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+
   },
-  "lib": ["es2015"]
+  "lib": ["es2015"],
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules"]
 }
+
