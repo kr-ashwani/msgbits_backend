@@ -1,99 +1,263 @@
 import config from "config";
 import express from "express";
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import { pipeline, Transform } from "stream";
+import { pipeline, PassThrough, Transform, Readable } from "stream";
 import { promisify } from "util";
 import busboy from "busboy";
 import { fileService } from "../database/chat/file/fileService";
+import { LocalStorageProvider, S3StorageProvider, StorageProvider } from "./StorageProvideService";
+import { EventEmitter } from "events";
+
+// Increase the default max listeners
+EventEmitter.defaultMaxListeners = 20;
 
 const pipelineAsync = promisify(pipeline);
 
+interface FileStreamingServiceConfig {
+  encryptionKey: string;
+  uploadToS3: boolean;
+  s3Bucket?: string;
+  algorithm?: string;
+  blockSize?: number;
+  ivSize?: number;
+  localStoragePath?: string;
+}
+
+interface NodeJSError extends Error {
+  code?: string;
+}
+
+function isNodeJSError(error: unknown): error is NodeJSError {
+  return error instanceof Error && "code" in error;
+}
+
 class FileStreamingService {
   private encryptionKey: Buffer;
-  private storagePath: string;
-  private algorithm: string = "aes-256-cbc";
-  private blockSize: number = 16;
-  private static ivSize: number = 16;
+  private algorithm: string;
+  private blockSize: number;
+  private static ivSize: number;
+  private storageProvider: StorageProvider;
 
-  constructor(encryptionKey: string) {
-    this.encryptionKey = crypto.scryptSync(encryptionKey, "salt", 32);
-    const storagePath = "./encryptedFiles";
-    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
-    this.storagePath = storagePath;
+  constructor(config: FileStreamingServiceConfig) {
+    const salt = crypto.randomBytes(16);
+    this.encryptionKey = crypto.scryptSync(config.encryptionKey, salt, 32);
+    this.algorithm = config.algorithm || "aes-256-cbc";
+    this.blockSize = config.blockSize || 16;
+    FileStreamingService.ivSize = config.ivSize || 16;
+    this.storageProvider =
+      config.uploadToS3 && config.s3Bucket
+        ? new S3StorageProvider(config.s3Bucket)
+        : new LocalStorageProvider(config.localStoragePath || "./encryptedFiles");
   }
+
   async processFileAndEncrypt(req: express.Request, res: express.Response) {
     const fileId = req.params.fileId;
-    if (!fileId) res.status(400).send("fileId is missing");
+    if (!fileId) return res.status(400).send("fileId is missing");
 
     const bb = busboy({ headers: req.headers });
 
-    bb.on("file", (name: string, file: any, info: any) => {
-      this.encryptAndSave(file, fileId)
-        .then(() => {
-          res.json({ fileId, message: "File uploaded successfully", url: fileId });
-        })
-        .catch((error) => {
-          res.status(500).send("Error processing file upload");
+    bb.on("file", async (name: string, file: NodeJS.ReadableStream, info: busboy.FileInfo) => {
+      try {
+        const { passThrough, iv } = this.createEncryptStream();
+
+        const savePromise = this.storageProvider.save(passThrough, fileId);
+
+        file.on("end", () => {
+          passThrough.end();
         });
+
+        await pipelineAsync(file, passThrough);
+        await savePromise;
+
+        res.json({ fileId, message: "File uploaded successfully", url: fileId });
+      } catch (error) {
+        console.error("Upload error:", error);
+        res.status(500).send("Error processing file upload");
+      }
     });
 
-    bb.on("error", (error: any) => {
+    bb.on("error", (error: Error) => {
+      console.error("Busboy error:", error);
       res.status(500).send("Error processing upload");
     });
 
     req.pipe(bb);
   }
+
+  private createEncryptStream() {
+    const iv = crypto.randomBytes(FileStreamingService.ivSize);
+    const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
+    const passThrough = new PassThrough();
+
+    passThrough.write(iv);
+
+    pipeline(cipher, passThrough, (err) => {
+      if (err) console.error("Encryption pipeline failed:", err);
+    });
+
+    return { passThrough, iv };
+  }
+
   async decryptAndStreamFile(req: express.Request, res: express.Response) {
     const fileId = req.params.fileId;
     const metadata = await fileService.getFileById(fileId);
     if (!metadata) return res.status(400).send("fileId is not accurate");
-    const filePath = path.join(this.storagePath, `${fileId}.enc`);
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).send("File not found");
+    try {
+      const encryptedFileSize = await this.storageProvider.getFileSize(fileId);
+      const iv = await this.readIV(fileId);
+      const actualFileSize = encryptedFileSize - FileStreamingService.ivSize;
+
+      res.setHeader("Content-Disposition", `inline; filename="${metadata.fileName}"`);
+      res.setHeader("Content-Type", metadata.fileType || "application/octet-stream");
+
+      const range = req.headers.range;
+      if (range) {
+        await this.handleRangeRequest(req, res, fileId, iv, actualFileSize, encryptedFileSize);
+      } else {
+        await this.handleFullRequest(req, res, fileId, iv, actualFileSize);
+      }
+    } catch (error) {
+      console.error("Streaming error:", error);
+      if (!res.headersSent) {
+        res.status(500).send("Error streaming file");
+      }
     }
-    res.setHeader("Content-Disposition", `inline; filename="${metadata.fileName}"`);
-    res.setHeader("Content-Type", metadata.fileType || "application/octet-stream");
+  }
 
-    const ivSize = FileStreamingService.ivSize;
-    const iv = Buffer.alloc(ivSize);
-    await new Promise<void>((resolve, reject) => {
-      fs.read(fs.openSync(filePath, "r"), iv, 0, ivSize, 0, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+  private async readIV(fileId: string): Promise<Buffer> {
+    const ivStream = await this.storageProvider.createReadStream(
+      fileId,
+      0,
+      FileStreamingService.ivSize - 1
+    );
+    const chunks: Buffer[] = [];
+
+    return new Promise((resolve, reject) => {
+      ivStream.on("data", (chunk) => chunks.push(chunk));
+      ivStream.on("end", () => resolve(Buffer.concat(chunks)));
+      ivStream.on("error", reject);
     });
-
-    const actualFileSize = metadata.size;
-    const stat = fs.statSync(filePath);
-    const encryptedFileSize = stat.size;
-
-    const range = req.headers.range;
-    if (range)
-      this.decryptAndStreamRangeFiles(req, res, iv, filePath, actualFileSize, encryptedFileSize);
-    else
-      this.decryptAndStreamNonRangeFiles(req, res, iv, filePath, actualFileSize, encryptedFileSize);
   }
 
-  private async encryptAndSave(readStream: NodeJS.ReadableStream, fileId: string): Promise<void> {
-    const iv = crypto.randomBytes(FileStreamingService.ivSize);
-    const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
-    const filePath = path.join(this.storagePath, `${fileId}.enc`);
-    const writeStream = fs.createWriteStream(filePath);
+  private async handleRangeRequest(
+    req: express.Request,
+    res: express.Response,
+    fileId: string,
+    iv: Buffer,
+    actualFileSize: number,
+    encryptedFileSize: number
+  ) {
+    const range = req.headers.range!;
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : actualFileSize - 1;
 
-    writeStream.write(iv);
-    await pipelineAsync(readStream, cipher, writeStream);
+    const chunkSize = end - start + 1;
+    const encryptedStart =
+      Math.floor(start / this.blockSize) * this.blockSize + FileStreamingService.ivSize;
+    const encryptedEnd =
+      Math.ceil((end + 1) / this.blockSize) * this.blockSize + FileStreamingService.ivSize - 1;
+
+    res.status(206);
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${actualFileSize}`);
+    res.setHeader("Content-Length", chunkSize);
+
+    const fileStream = await this.storageProvider.createReadStream(
+      fileId,
+      encryptedStart,
+      encryptedEnd
+    );
+    const { decryptedStream } = this.createDecryptStream(iv, start);
+
+    const trimStream = this.createTrimStream(start % this.blockSize, chunkSize);
+
+    let isClosed = false;
+
+    const cleanup = (err?: unknown) => {
+      if (isClosed) return;
+      isClosed = true;
+
+      if (fileStream.unpipe) fileStream.unpipe(decryptedStream);
+      decryptedStream.unpipe(trimStream);
+      trimStream.unpipe(res);
+
+      this.safelyCloseStream(fileStream);
+      this.safelyCloseStream(decryptedStream);
+      this.safelyCloseStream(trimStream);
+
+      if (
+        err &&
+        isNodeJSError(err) &&
+        err.code !== "ERR_STREAM_PREMATURE_CLOSE" &&
+        !res.headersSent
+      ) {
+        res.status(500).send("Error streaming file");
+      }
+    };
+
+    fileStream.on("error", cleanup);
+    decryptedStream.on("error", cleanup);
+    trimStream.on("error", cleanup);
+    res.on("close", cleanup);
+
+    fileStream.pipe(decryptedStream).pipe(trimStream).pipe(res);
   }
 
-  private createDecryptStream(key: Buffer, iv: Buffer, start: number = 0): Transform {
-    let decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+  private async handleFullRequest(
+    req: express.Request,
+    res: express.Response,
+    fileId: string,
+    iv: Buffer,
+    actualFileSize: number
+  ) {
+    const fileStream = await this.storageProvider.createReadStream(
+      fileId,
+      FileStreamingService.ivSize
+    );
+
+    res.setHeader("Content-Length", actualFileSize);
+
+    const { decryptedStream } = this.createDecryptStream(iv);
+
+    let isClosed = false;
+
+    const cleanup = (err?: unknown) => {
+      if (isClosed) return;
+      isClosed = true;
+
+      if (fileStream.unpipe) fileStream.unpipe(decryptedStream);
+      decryptedStream.unpipe(res);
+
+      this.safelyCloseStream(fileStream);
+      this.safelyCloseStream(decryptedStream);
+
+      if (
+        err &&
+        isNodeJSError(err) &&
+        err.code !== "ERR_STREAM_PREMATURE_CLOSE" &&
+        !res.headersSent
+      ) {
+        res.status(500).send("Error streaming file");
+      }
+    };
+
+    fileStream.on("error", cleanup);
+    decryptedStream.on("error", cleanup);
+    res.on("close", cleanup);
+
+    fileStream.pipe(decryptedStream).pipe(res);
+  }
+
+  private createDecryptStream(iv: Buffer, start: number = 0) {
+    const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
+    const decryptedStream = new PassThrough();
+
     let buffer = Buffer.alloc(0);
     let startOffset = start % this.blockSize;
     const blockSize = this.blockSize;
 
-    return new Transform({
+    const transform = new Transform({
       transform(chunk: Buffer, encoding, callback) {
         buffer = Buffer.concat([buffer, chunk]);
 
@@ -115,119 +279,90 @@ class FileStreamingService {
       },
       flush(callback) {
         if (buffer.length > 0) {
-          let decrypted = decipher.update(buffer);
-          this.push(decrypted);
+          try {
+            let decrypted = decipher.update(buffer);
+            this.push(decrypted);
+            const final = decipher.final();
+            this.push(final);
+          } catch (err) {
+            console.error("Error in decryption flush:", err);
+            callback(err as Error);
+            return;
+          }
         }
-
-        try {
-          const final = decipher.final();
-          this.push(final);
-        } catch (err) {
-          console.error("Error in decipher final:", err);
-        }
-
         callback();
       },
     });
+
+    let isClosed = false;
+
+    const cleanup = (err?: unknown) => {
+      if (isClosed) return;
+      isClosed = true;
+
+      transform.unpipe(decryptedStream);
+      this.safelyCloseStream(transform);
+      this.safelyCloseStream(decryptedStream);
+
+      if (err && isNodeJSError(err) && err.code !== "ERR_STREAM_PREMATURE_CLOSE") {
+        console.error("Decryption pipeline failed:", err);
+      }
+    };
+
+    transform.on("end", cleanup);
+    transform.on("error", cleanup);
+    decryptedStream.on("end", cleanup);
+    decryptedStream.on("error", cleanup);
+
+    transform.pipe(decryptedStream);
+
+    return { decryptedStream, transform };
   }
 
-  private async decryptAndStreamRangeFiles(
-    req: express.Request,
-    res: express.Response,
-    iv: Buffer,
-    filePath: string,
-    actualFileSize: number,
-    encryptedFileSize: number
-  ) {
-    const range = req.headers.range;
-    let start = 0;
-    let end = encryptedFileSize - 1;
+  private createTrimStream(startOffset: number, length: number): Transform {
+    let bytesOutput = 0;
 
-    if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      start = parseInt(parts[0], 10);
-      end = parts[1] ? parseInt(parts[1], 10) : actualFileSize - 1;
-
-      res.status(206);
-      res.setHeader("Content-Range", `bytes ${start}-${end}/${actualFileSize}`);
-    }
-
-    let chunkSize = end - start + 1;
-    res.setHeader("Content-Length", chunkSize);
-
-    const ivSize = 16;
-    const encryptedStart = Math.floor(start / this.blockSize) * this.blockSize;
-
-    const readStream = fs.createReadStream(filePath, {
-      start: encryptedStart + ivSize,
-      end: encryptedFileSize - 1,
-      highWaterMark: 64 * 1024, // 64KB chunks
-    });
-
-    const decryptStream = this.createDecryptStream(this.encryptionKey, iv, encryptedStart);
-    const blockSize = this.blockSize;
-    const trimStream = new Transform({
+    return new Transform({
       transform(chunk: Buffer, encoding, callback) {
-        if (start > 0) {
-          const startOffset = start % blockSize;
-          chunk = chunk.slice(startOffset);
-          start = 0;
+        if (bytesOutput >= length) {
+          callback();
+          return;
         }
-        if (chunk.length > chunkSize) {
-          chunk = chunk.slice(0, chunkSize);
+
+        let outputChunk = chunk;
+        if (startOffset > 0) {
+          outputChunk = chunk.slice(startOffset);
+          startOffset = 0;
         }
-        chunkSize -= chunk.length;
-        this.push(chunk);
+
+        if (bytesOutput + outputChunk.length > length) {
+          outputChunk = outputChunk.slice(0, length - bytesOutput);
+        }
+
+        bytesOutput += outputChunk.length;
+        this.push(outputChunk);
         callback();
       },
     });
-
-    res.on("close", () => {
-      readStream.destroy();
-    });
-
-    try {
-      await pipelineAsync(readStream, decryptStream, trimStream, res);
-    } catch (error: any) {
-      if (error.code !== "ERR_STREAM_PREMATURE_CLOSE") {
-        console.error("Error in decryptAndStream:", error.message);
-        if (!res.headersSent) {
-          res.status(500).send("Internal Server Error");
-        }
-      }
-    }
   }
 
-  private async decryptAndStreamNonRangeFiles(
-    req: express.Request,
-    res: express.Response,
-    iv: Buffer,
-    filePath: string,
-    actualFileSize: number,
-    encryptedFileSize: number
-  ) {
-    const ivSize = FileStreamingService.ivSize;
-
-    const readStream = fs.createReadStream(filePath, {
-      start: ivSize,
-      end: encryptedFileSize,
-      highWaterMark: 64 * 1024, // 64KB chunks
-    });
-    const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
-
-    res.setHeader("Content-Length", actualFileSize);
-
-    try {
-      await pipelineAsync(readStream, decipher, res);
-    } catch (error) {
-      console.error("Download failed:", error);
-      if (!res.headersSent) {
-        res.status(500).send("Download failed");
-      }
+  private safelyCloseStream(stream: any) {
+    if (stream.destroy && typeof stream.destroy === "function") {
+      stream.destroy();
+    } else if (stream.cancel && typeof stream.cancel === "function") {
+      stream.cancel();
     }
   }
 }
 
-const encryptionKey = process.env.ENCRYPTION_KEY || "xxx";
-const fileStreamingService = new FileStreamingService(encryptionKey);
+// Usage
+const serviceConfig: FileStreamingServiceConfig = {
+  encryptionKey: process.env.ENCRYPTION_KEY || "default-key",
+  uploadToS3: process.env.UPLOAD_FILES_TO_S3 === "true",
+  s3Bucket: process.env.S3_BUCKET,
+  // Optional: algorithm, blockSize, ivSize, localStoragePath
+};
+
+const fileStreamingService = new FileStreamingService(serviceConfig);
+
 export { fileStreamingService };
