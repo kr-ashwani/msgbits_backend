@@ -2,7 +2,7 @@ name: msgbits
 
 services:
   backend:
-    image: ${DOCKER_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
+    image: ${DOCKER_REPO}/backend:${IMAGE_TAG}
     ports:
       - "8080:8080"
     depends_on:
