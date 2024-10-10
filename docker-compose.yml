@@ -2,7 +2,7 @@ name: msgbits
 
 services:
   backend:
-    image: ${DOCKER_REPO}/msgbits_backend:${GITHUB_SHA}
+    image: ${DOCKER_REPO}/backend:${GITHUB_SHA}
     ports:
       - "8080:8080"
     depends_on:
