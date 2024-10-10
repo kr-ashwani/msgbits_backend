@@ -7,7 +7,6 @@ on:
 
 env:
   DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}
-  IMAGE_NAME: msgbits_backend
 
 jobs:
   build-and-push:
@@ -34,10 +33,10 @@ jobs:
         context: .
         push: true
         tags: |
-          ${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          ${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:latest
-        cache-from: type=registry,ref=${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:buildcache
-        cache-to: type=registry,ref=${{ env.DOCKER_REPO }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+          ${{ env.DOCKER_REPO }}/${service}:${{ github.sha }}
+          ${{ env.DOCKER_REPO }}/${service}:latest
+        cache-from: type=registry,ref=${{ env.DOCKER_REPO }}/${service}:buildcache
+        cache-to: type=registry,ref=${{ env.DOCKER_REPO }}/${service}:buildcache,mode=max
 
   deploy:
     needs: build-and-push
@@ -59,7 +58,7 @@ jobs:
       run: |
         ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} "
           export DOCKER_REPO=${{ env.DOCKER_REPO }}
-          export IMAGE_NAME=${{ env.IMAGE_NAME }}
+          export IMAGE_NAME=${service}
           export IMAGE_TAG=${{ github.sha }}
           
           echo 'Pulling latest images...'
