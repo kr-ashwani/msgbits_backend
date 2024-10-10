@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }} 
 
 jobs:
   build-and-push:
