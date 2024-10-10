@@ -27,16 +27,26 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: |
-          ${{ env.DOCKER_REPO }}/${service}:${{ github.sha }}
-          ${{ env.DOCKER_REPO }}/${service}:latest
-        cache-from: type=registry,ref=${{ env.DOCKER_REPO }}/${service}:buildcache
-        cache-to: type=registry,ref=${{ env.DOCKER_REPO }}/${service}:buildcache,mode=max
+
+    - name: Build and push with Docker Compose
+    env:
+      DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}
+      GITHUB_SHA: ${{ github.sha }}
+    run: |
+      # Build all services
+      docker compose build
+
+      # Tag and push each service
+      docker compose config --format json | jq -r '.services | to_entries[] | .key as $service | .value.image | select(. != null) | [$service, .] | @tsv' | while read service image; do
+        # Tag with SHA
+        docker tag $image ${DOCKER_REPO}/${service}:${GITHUB_SHA}
+        docker push ${DOCKER_REPO}/${service}:${GITHUB_SHA}
+        
+        # Tag as latest
+        docker tag $image ${DOCKER_REPO}/${service}:latest
+        docker push ${DOCKER_REPO}/${service}:latest
+      done
+
 
   deploy:
     needs: build-and-push
