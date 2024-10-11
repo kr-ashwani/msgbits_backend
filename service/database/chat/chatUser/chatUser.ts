@@ -12,7 +12,7 @@ class ChatUserService {
       if (!createdAt) return await this.getAllChatUsers();
 
       await userDAO.find(
-        { createdAt: { $gt: createdAt } },
+        { updatedAt: { $gt: createdAt } },
         new UserRowMapper((user) => {
           userArr.push(user);
         })
