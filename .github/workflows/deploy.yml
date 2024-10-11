@@ -33,11 +33,23 @@ jobs:
         DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}
         GITHUB_SHA: ${{ github.sha }}
       run: |
+        # Pull Redis image explicitly
+        docker pull redis:7.0-alpine
+
         # Build all services
         docker compose build
 
         # Tag and push each service
-        docker compose config --format json | jq -r '.services | to_entries[] | .key as $service | .value.image | select(. != null) | [$service, .] | @tsv' | while read service image; do
+        docker compose config --format json | jq -r '.services | to_entries[] | .key as $service | .value.image // .value.name | select(. != null) | [$service, .] | @tsv' | while read service image; do
+
+          if [ "$service" = "redis" ]; then
+            # For Redis, use the pulled image
+            image="redis:7.0-alpine"
+          else
+            # For other services (like backend), use the built image
+            image="${DOCKER_REPO}/${service}"
+          fi
+
           # Tag with SHA
           docker tag $image ${DOCKER_REPO}/${service}:${GITHUB_SHA}
           docker push ${DOCKER_REPO}/${service}:${GITHUB_SHA}
@@ -46,7 +58,6 @@ jobs:
           docker tag $image ${DOCKER_REPO}/${service}:latest
           docker push ${DOCKER_REPO}/${service}:latest
         done
-
 
   deploy:
     needs: build-and-push
