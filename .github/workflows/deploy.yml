@@ -60,11 +60,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: store private key
+    - name: Copy files to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ubuntu
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        scp -i private_key -o StrictHostKeyChecking=no docker-compose.yml ${USER}@${HOST}:~/docker-compose.yml
+
 
     - name: Deploy to EC2
       env:
