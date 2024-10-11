@@ -57,7 +57,7 @@ class App {
           origin: ["http://localhost:3000", clientURL],
           credentials: true,
         },
-        path: "/api/socket.io", // Important: add the same path here
+        //path: "/api/socket.io", // Important: add the same path here
       }
     );
     //initialize Express App like redis adapter, middlewares, routes and error handler
