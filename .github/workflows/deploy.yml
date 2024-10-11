@@ -28,12 +28,11 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
-        - name: Build and push with Docker Compose
+    - name: Build and push with Docker Compose
       env:
         DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}
         GITHUB_SHA: ${{ github.sha }}
       run: |
-
         # Build all services
         docker compose build
 
