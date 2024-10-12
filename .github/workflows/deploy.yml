@@ -82,13 +82,13 @@ jobs:
           export GITHUB_SHA=${GITHUB_SHA}
           mkdir -p ~/msgbits/encryptedFiles
           
+          echo "$ENV_PROD" > .env.production
+          
           echo 'Pulling latest images...'
           docker-compose pull
 
           echo 'Starting services...'
-          echo "$ENV_PROD" > .env.production
           docker-compose up -d
-          rm .env.production
           
           echo 'Pruning old images and containers...'
           docker image prune -af
@@ -96,3 +96,7 @@ jobs:
           
           echo 'Deployment complete'
         "
+
+      # Remove the .env.production file after docker operations
+    - name: Cleanup
+      run: rm -f .env.production      
