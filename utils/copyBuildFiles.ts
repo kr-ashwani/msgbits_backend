@@ -27,10 +27,4 @@ const viewsDest = path.join(currentDir, "..", "build", "views");
 copyDir(viewsSrc, viewsDest);
 console.log("Views directory copied successfully");
 
-// Copy .env file
-const envSrc = path.join(currentDir, "..", ".env");
-const envDest = path.join(currentDir, "..", "build", ".env");
-copyFile(envSrc, envDest);
-console.log(".env file copied successfully");
-
 console.log("All files copied successfully");

@@ -16,8 +16,10 @@ services:
       - REDIS_PORT=6379
     networks:
       - app-network
+    env_file:
+      - ./.env.production  # Add this line  
     volumes:
-      - encrypted_files:/usr/src/app/build/encryptedFiles  
+      - encrypted_files:/usr/src/app/encryptedFiles  
     
   redis:
     image: "redis:7.0-alpine"
@@ -33,7 +35,9 @@ networks:
 volumes:
   redis_data:
   encrypted_files:
+    driver: local
     driver_opts:
       type: none
       device: ${HOME}/msgbits/encryptedFiles
+      # device: /mnt/d/projects/msgbits/msgbits_backend/encryptedFiles
       o: bind

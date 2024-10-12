@@ -14,6 +14,8 @@ RUN npm ci
 # Copy source files
 COPY . .
 
+RUN rm -rf .env*
+
 # Build the application
 RUN npm run build
 
@@ -24,7 +26,6 @@ WORKDIR /usr/src/app
 
 # Copy built assets from builder stage
 COPY --from=builder /usr/src/app/build ./build
-COPY --from=builder /usr/src/app/*.env ./
 COPY --from=builder /usr/src/app/build/config ./config
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package*.json ./
