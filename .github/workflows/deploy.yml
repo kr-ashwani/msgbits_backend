@@ -74,7 +74,6 @@ jobs:
         PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ubuntu
-        ENV_PROD: 
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
         ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} "mkdir -p ~/msgbits/backend"
