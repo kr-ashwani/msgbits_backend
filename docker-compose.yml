@@ -2,7 +2,7 @@ name: msgbits
 
 services:
   backend:
-    image: ${DOCKER_REPO}/backend:${GITHUB_SHA}
+    # image: ${DOCKER_REPO}/backend:${GITHUB_SHA}
     build:
       context: .
       dockerfile: Dockerfile
@@ -18,8 +18,8 @@ services:
       - app-network
     env_file:
       - ./.env.production  # Add this line  
-    volumes:
-      - encrypted_files:/usr/src/app/encryptedFiles  
+    # volumes:
+    #   - encrypted_files:/usr/src/app/encryptedFiles  
     
   redis:
     image: "redis:7.0-alpine"
