@@ -2,7 +2,7 @@ name: msgbits
 
 services:
   backend:
-    image: ${DOCKER_REPO}/backend:${GITHUB_SHA}
+    # image: ${DOCKER_REPO}/backend:${GITHUB_SHA}
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,7 +35,6 @@ networks:
 volumes:
   redis_data:
   encrypted_files:
-    driver: local
     driver_opts:
       type: none
       device: ${HOME}/msgbits/encryptedFiles
