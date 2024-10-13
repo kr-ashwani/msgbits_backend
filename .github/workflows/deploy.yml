@@ -108,7 +108,6 @@ jobs:
           echo 'Deployment complete'
         "
         
-
       # Remove the .env.production file after docker operations
     - name: Cleanup
       env:
