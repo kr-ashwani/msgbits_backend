@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
+import { ClientResponse } from "../../utils/clientResponse";
 
 async function logoutController(req: Request, res: Response) {
   // clear auth cookie

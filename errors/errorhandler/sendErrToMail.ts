@@ -1,4 +1,4 @@
-import mailService from "../service/mail/mailService";
+import mailService from "../../service/mail/mailService";
 
 async function sendMailToAdminIfCritical(err: Error) {
   err.stack = getSimplifiedStack(err);

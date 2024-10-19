@@ -1,7 +1,7 @@
 import type { Queue, Worker } from "bullmq";
 import MailQueue from "./queues/MailQueue";
 import MailWorker from "./workers/MailWorker";
-import Mail from "../utilityClasses/mail/Mail";
+import Mail from "../utils/utilityClasses/mail/Mail";
 
 /**
  * Centralised class for initializing all queue and Worker

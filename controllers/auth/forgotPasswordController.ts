@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { userService } from "../../service/database/user/userService";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
+import { ClientResponse } from "../../utils/clientResponse";
 
 export const forgotPasswordController = async (req: Request, res: Response) => {
   const message = await userService.forgotPassword(req.body);

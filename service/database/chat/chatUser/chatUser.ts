@@ -1,8 +1,9 @@
 import { HydratedDocument } from "mongoose";
 import { UserRowMapper } from "../../../../Dao/RowMapper/UserRowMapper";
 import { userDAO } from "../../../../Dao/UserDAO";
-import { IUser } from "../../../../model/user.model";
+import { IUser, userModelEvents } from "../../../../model/user.model";
 import { ChatUserDTO } from "../../../../schema/chat/ChatUserDTOSchema";
+import { ResponseUserSchema } from "../../../../schema/responseSchema";
 
 class ChatUserService {
   async getChatUsersCreatedAfterTimestamp(createdAt: string | null): Promise<ChatUserDTO[]> {
@@ -40,6 +41,13 @@ class ChatUserService {
     }
   }
 
+  async registerForNewlyCreatedChatUser(callback: (user: ChatUserDTO) => void) {
+    userModelEvents.on("created", async (doc: ResponseUserSchema) => {
+      const user = this.convertSingleUserToDTO(doc);
+      callback(user);
+    });
+  }
+
   //function overloads
   convertIUserToDTO(file: HydratedDocument<IUser>): ChatUserDTO;
   convertIUserToDTO(file: HydratedDocument<IUser>[]): ChatUserDTO[];
@@ -54,7 +62,7 @@ class ChatUserService {
       return this.convertSingleUserToDTO(user);
     }
   }
-  private convertSingleUserToDTO(user: HydratedDocument<IUser>): ChatUserDTO {
+  private convertSingleUserToDTO(user: HydratedDocument<IUser> | ResponseUserSchema): ChatUserDTO {
     return {
       email: user.email,
       name: user.name,

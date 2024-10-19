@@ -1,7 +1,7 @@
 import { HydratedDocument } from "mongoose";
-import { IUser } from "../model/user.model";
+import { IUser } from "../../model/user.model";
 import { pick } from "lodash";
-import { IRole } from "../model/role.model";
+import { IRole } from "../../model/role.model";
 
 export type ResponseUserSchema = Pick<
   HydratedDocument<IUser>,

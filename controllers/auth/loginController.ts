@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
-
-import { ClientResponse } from "../../utilityClasses/clientResponse";
 import { userService } from "../../service/database/user/userService";
+import { ClientResponse } from "../../utils/clientResponse";
 
 async function loginController(req: Request, res: Response) {
   const user = await userService.findAndValidateUser(req.body);

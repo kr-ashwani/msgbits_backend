@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../../errors/AppError";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
 import AuthenticationError from "../../errors/httperror/AuthenticationError";
 import AuthorizationError from "../../errors/httperror/AuthorizationError";
 import InsufficientRoleError from "../../errors/httperror/InsufficientRoleError";
 import EmailVerificationError from "../../errors/httperror/EmailVerificationError";
+import { ClientResponse } from "../../utils/clientResponse";
 
 const AppErrorErrorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (res.writableFinished) next(err);

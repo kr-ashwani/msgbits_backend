@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
 import { userService } from "../../service/database/user/userService";
+import { ClientResponse } from "../../utils/clientResponse";
 
 async function signupController(req: Request, res: Response) {
   const user = await userService.createUser(req.body);

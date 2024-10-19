@@ -1,5 +1,5 @@
-import handleError from "../errorhandler/ErrorHandler";
 import { errToAppError } from "../errors/AppError";
+import handleError from "../errors/errorhandler/ErrorHandler";
 
 process.on("uncaughtException", (err) => {
   if (err instanceof Error) handleError(errToAppError(err, true));

@@ -1,5 +1,5 @@
-import handleError from "../../errorhandler/ErrorHandler";
 import { AppError } from "../../errors/AppError";
+import handleError from "../../errors/errorhandler/ErrorHandler";
 import { UserUpdateProfile } from "../../schema/user/UserUpdateProfileSchema";
 import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";

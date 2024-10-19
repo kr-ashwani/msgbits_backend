@@ -3,10 +3,11 @@ import { HydratedDocument } from "mongoose";
 import { UserRowMapper } from "../../../../Dao/RowMapper/UserRowMapper";
 import { userDAO } from "../../../../Dao/UserDAO";
 import { authType, IUser } from "../../../../model/user.model";
-import { resSchemaForModel } from "../../../../responseSchema";
+import { resSchemaForModel } from "../../../../schema/responseSchema";
 import { IOAuthUserSchema } from "../../../../schema/user/OAuthUserSchema";
 import crypto from "crypto";
 import EmailVerificationError from "../../../../errors/httperror/EmailVerificationError";
+import { userService } from "../../user/userService";
 
 class OAuthService {
   async createOAuthUser(input: IOAuthUserSchema, oauthType: ArrayElement<authType>) {
@@ -45,7 +46,10 @@ class OAuthService {
       new UserRowMapper((data) => user.push(data))
     );
 
-    return resSchemaForModel.getUser(user[0]);
+    const resUser = resSchemaForModel.getUser(user[0]);
+
+    userService.emitNewVerifiedUserCreated(resUser);
+    return resUser;
   }
 }
 

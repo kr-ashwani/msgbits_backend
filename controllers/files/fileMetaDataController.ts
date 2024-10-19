@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { fileService } from "../../service/database/chat/file/fileService";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
+import { ClientResponse } from "../../utils/clientResponse";
 
 async function fileMetaDataController(req: Request, res: Response) {
   const clientRes = new ClientResponse(res);

@@ -2,8 +2,6 @@ import config from "config";
 import { createLogger, format, transports } from "winston";
 import path from "path";
 import dbTansport from "./dbTransport";
-import handleError from "../errorhandler/ErrorHandler";
-import { errToAppError } from "../errors/AppError";
 import { parseStack } from "../utils/parseStack";
 
 const { combine, timestamp, json, errors } = format;
@@ -33,7 +31,7 @@ const productionLogger = function () {
       myFormat()
     ),
     exitOnError: (err: Error) => {
-      handleError(errToAppError(err, true));
+      console.log(err.message);
       return true;
     },
 

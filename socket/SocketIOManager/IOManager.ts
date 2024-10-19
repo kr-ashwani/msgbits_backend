@@ -2,9 +2,9 @@ import { Server } from "socket.io";
 import logger from "../../logger";
 import { EmitterMapping, ListenerSchema } from "./types";
 import { SocketManager } from "./SocketManager";
-import handleError from "../../errorhandler/ErrorHandler";
 import { AppError, errToAppError } from "../../errors/AppError";
 import config from "config";
+import handleError from "../../errors/errorhandler/ErrorHandler";
 
 export class IOManager {
   private io: Server;

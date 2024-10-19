@@ -2,10 +2,10 @@ import { Socket } from "socket.io";
 import { ExtendedError } from "socket.io/dist/namespace";
 import cookie from "cookie";
 import { AppError, errToAppError } from "../../errors/AppError";
-import handleError from "../../errorhandler/ErrorHandler";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import AuthorizationError from "../../errors/httperror/AuthorizationError";
 import { authService } from "../../service/database/auth/authService";
+import handleError from "../../errors/errorhandler/ErrorHandler";
 
 export interface SocketAuthData {
   auth: {

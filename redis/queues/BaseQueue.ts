@@ -1,8 +1,8 @@
 import config from "config";
 import { Queue } from "bullmq";
 import RedisConnection from "../redisConnection";
-import handleError from "../../errorhandler/ErrorHandler";
 import { errToAppError } from "../../errors/AppError";
+import handleError from "../../errors/errorhandler/ErrorHandler";
 
 class BaseQueue<DataType, ResultType> {
   private readonly queue;

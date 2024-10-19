@@ -39,7 +39,7 @@ export interface MessageEmitterMapping {
   "message-sent": string;
 }
 export interface ChatUserEmitterMapping {
-  "chatuser-getall": ChatUserDTO[];
+  "chatuser-new": ChatUserDTO;
   "chatuser-statusChange": {
     userId: string | string[];
     status: string;

@@ -5,6 +5,7 @@ import { IMessage } from "../../../../model/message.model";
 import { MessageDTO } from "../../../../schema/chat/MessageDTOSchema";
 import { fileService } from "../file/fileService";
 import { isMember } from "../chatRoom/chatRoomDecorators";
+import cryptoSingleton from "../../../encryption/CryptoSingleton";
 
 // Each method must accept an object that includes the userId and chatRoomId property.
 // The userId represents the ID of the user attempting to access the chatroom messages.
@@ -76,6 +77,7 @@ class MessageService {
     try {
       let success = false;
       const message = this.convertDTOToIMessage(messageDTO);
+      message.message = await cryptoSingleton.encrypt(message.message);
       await messageDAO.create(
         message,
         new MessageRowMapper(() => {
@@ -114,9 +116,7 @@ class MessageService {
 
       await messageDAO.find(
         filter,
-        new MessageRowMapper((message) => {
-          messageArr.push(message.toObject());
-        })
+        new MessageRowMapper((message) => messageArr.push(message.toObject()))
       );
 
       const messageDTO: MessageDTO[] = [];
@@ -140,6 +140,7 @@ class MessageService {
     else return this.convertSingleIMessageToDTO(message);
   }
   private async convertSingleIMessageToDTO(message: IMessage): Promise<MessageDTO | null> {
+    message.message = await cryptoSingleton.decrypt(message.message);
     if (message.type === "file") {
       const file = await fileService.getFileById(message.fileId);
       return file

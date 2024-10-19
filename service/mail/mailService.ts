@@ -1,12 +1,16 @@
 import config from "config";
 import nodemailer from "nodemailer";
-import { MailParams } from "../../utilityClasses/mail/Mail";
 import logger from "../../logger";
-import { userDoc } from "../../Dao/UserDAO";
 import RedisPubSub from "../../redis";
-import MailBuilder from "../../utilityClasses/mail/MailBuilder";
-import renderEJS from "../../viewsRender/renderEjs";
+import { MailParams } from "../../utils/utilityClasses/mail/Mail";
+import MailBuilder from "../../utils/utilityClasses/mail/MailBuilder";
+import renderEJS from "../../views/viewsRender/renderEjs";
 
+interface UserNameEmailAuthCode {
+  email: string;
+  authCode: string;
+  name: string;
+}
 class MailService {
   private static instance: MailService;
   private transporter: nodemailer.Transporter;
@@ -68,38 +72,38 @@ class MailService {
     // add mail to redis mail queue
     RedisPubSub.getInstance().mailQueue.add("send error mail to Admin", mail);
   }
-  async addOTPmailToQueue(user: userDoc) {
+  async addOTPmailToQueue({ email, name, authCode }: UserNameEmailAuthCode) {
     const mail = new MailBuilder();
 
     mail
       .setFrom("Msgbits Team msgbits07@gmail.com")
-      .setTo(user.email)
+      .setTo(email)
       .setSubject("Mail From Msgbits App");
 
     const html = await renderEJS.renderEJS({
       type: "OTP_MAIL",
-      name: user.name,
-      otp: user.authCode,
+      name,
+      otp: Number(authCode),
     });
     mail.setHtml(html);
     // add mail to redis mail queue
     RedisPubSub.getInstance().mailQueue.add("send otp to user", mail);
   }
 
-  async addPasswordResetMailToQueue(user: userDoc) {
+  async addPasswordResetMailToQueue({ email, name, authCode }: UserNameEmailAuthCode) {
     const mail = new MailBuilder();
 
     mail
       .setFrom("Msgbits Team msgbits07@gmail.com")
-      .setTo(user.email)
+      .setTo(email)
       .setSubject("Mail From Msgbits App");
 
     const html = await renderEJS.renderEJS({
       type: "PASSWORD_RESET_MAIL",
-      name: user.name,
-      passwordResetLink: `${config.get<string>("CLIENT_URL")}/resetpassword?email=${
-        user.email
-      }&code=${user.authCode}`,
+      name: name,
+      passwordResetLink: `${config.get<string>(
+        "CLIENT_URL"
+      )}/resetpassword?email=${email}&code=${authCode}`,
     });
     mail.setHtml(html);
     // add mail to redis mail queue

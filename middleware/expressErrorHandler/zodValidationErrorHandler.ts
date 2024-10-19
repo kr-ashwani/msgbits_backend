@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
 import { fromError } from "zod-validation-error";
+import { ClientResponse } from "../../utils/clientResponse";
 
 const zodValidationErrorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof ZodError) {

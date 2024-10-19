@@ -3,10 +3,11 @@ import { UserRowMapper } from "../../../Dao/RowMapper/UserRowMapper";
 import { userDAO } from "../../../Dao/UserDAO";
 import AuthenticationError from "../../../errors/httperror/AuthenticationError";
 import { IUser } from "../../../model/user.model";
-import { resSchemaForModel } from "../../../responseSchema";
+import { resSchemaForModel } from "../../../schema/responseSchema";
 import { OTPSchema } from "../../../schema/user/OTPSchema";
 import { jwtService } from "../../jwt/JwtService";
 import { userService } from "../user/userService";
+import bcrypt from "bcrypt";
 
 class AuthService {
   async validateAuthTokenService(cookie: any) {
@@ -28,6 +29,30 @@ class AuthService {
   async verifyOTPService(input: OTPSchema) {
     try {
       const user: HydratedDocument<IUser>[] = [];
+
+      await userDAO.find(
+        {
+          email: input.email,
+        },
+        new UserRowMapper((data) => {
+          user.push(data);
+        })
+      );
+
+      let failureMsg = "";
+      if (user.length !== 1) failureMsg = "User is not registered";
+      else if (user[0].isVerified)
+        failureMsg = `User with email ${user[0].email} is already registered. Try logging in`;
+      else if (!(await bcrypt.compare(String(input.otp), user[0].authCode)))
+        failureMsg = "OTP did not match";
+      else if (user[0].authCodeValidTime <= Date.now()) failureMsg = "OTP has expired";
+      else if (user[0].authCodeType !== "VerifyAccount") failureMsg = "Code is invalid";
+
+      if (failureMsg) throw new AuthenticationError(failureMsg);
+
+      const userAuthCode = user[0].authCode;
+      user.length = 0;
+
       /**
        * checks for email matches input email
        * account is not already verified
@@ -38,7 +63,7 @@ class AuthService {
         {
           email: input.email,
           isVerified: false,
-          authCode: input.otp,
+          authCode: userAuthCode,
           authCodeValidTime: { $gte: Date.now() },
           authCodeType: "VerifyAccount",
         },
@@ -50,27 +75,10 @@ class AuthService {
           user.push(data);
         })
       );
-      // if previous update is successful then update query will return that user
-      if (user.length === 1) return resSchemaForModel.getUser(user[0]);
 
-      // if user update is unsuccessful, then find used by input email and check what went wrong
-      await userDAO.find(
-        {
-          email: input.email,
-        },
-        new UserRowMapper((data) => {
-          user.push(data);
-        })
-      );
+      if (user.length !== 1) throw new AuthenticationError("Something went wrong");
 
-      let failureMsg = "Something Went Wrong";
-      if (user.length !== 1) failureMsg = "User is not registered";
-      else if (user[0].isVerified)
-        failureMsg = `User with email ${user[0].email} is already registered. Try logging in`;
-      else if (user[0].authCode !== Number(input.otp)) failureMsg = "OTP did not match";
-      else if (user[0].authCodeValidTime <= Date.now()) failureMsg = "OTP has expired";
-
-      throw new AuthenticationError(failureMsg);
+      return resSchemaForModel.getUser(user[0]);
     } catch (err) {
       throw err;
     }

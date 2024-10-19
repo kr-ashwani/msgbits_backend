@@ -7,6 +7,10 @@ export interface OAuthUserInput extends UserInput {
   isVerified: boolean;
 }
 
+export interface OAuthUserInputAuthCodeOpt extends OAuthUserInput {
+  authCode?: string;
+}
+
 export const googleOAuthSchema = z.object({
   jwt: z.string(),
 });

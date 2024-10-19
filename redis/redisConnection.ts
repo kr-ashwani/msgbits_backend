@@ -1,7 +1,7 @@
 import Redis, { RedisOptions } from "ioredis";
 import logger from "../logger";
-import handleError from "../errorhandler/ErrorHandler";
 import { errToAppError } from "../errors/AppError";
+import handleError from "../errors/errorhandler/ErrorHandler";
 
 class RedisConnection {
   private readonly redis: Redis;

@@ -2,9 +2,9 @@ import { Socket } from "socket.io";
 import { EmitterMapping, ListenerSchema } from "./types";
 import { SocketAuthData } from "../EventHandlers/validateSocketConnection";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
-import handleError from "../../errorhandler/ErrorHandler";
 import { AppError, errToAppError } from "../../errors/AppError";
 import DecoratorPermissionError from "../../errors/decoratorError.ts/DecoratorPermission";
+import handleError from "../../errors/errorhandler/ErrorHandler";
 
 export class SocketManager {
   private socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketAuthData>;

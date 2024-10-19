@@ -1,8 +1,8 @@
 import config from "config";
 import RedisConnection from "../redisConnection";
 import { Job, Processor, RedisOptions, Worker } from "bullmq";
-import handleError from "../../errorhandler/ErrorHandler";
 import { errToAppError } from "../../errors/AppError";
+import handleError from "../../errors/errorhandler/ErrorHandler";
 
 abstract class BaseWorker<DataType, ResultType> {
   private readonly worker;

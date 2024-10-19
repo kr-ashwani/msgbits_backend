@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-   "typeRoots": ["./types", "./node_modules/@types"],
+   "typeRoots": ["schema/types", "./node_modules/@types"],
     "types": ["node"],
     "noEmitOnError": true,
     "strict": true,

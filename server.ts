@@ -27,6 +27,7 @@ import "./model/role.model";
 import validateUserAndRefreshToken from "./middleware/validateUserAndRefreshToken";
 import { SocketService } from "./service/socket/SocketService";
 import { AdminSocketService } from "./service/socket/admin/AdminSocketService";
+import { IOService } from "./service/socket/IOService";
 
 class App {
   private readonly app;
@@ -84,6 +85,9 @@ class App {
   private initializeSocketHandlers() {
     // validate socket with default namepace /
     this.io.use(validateSocketConnection);
+    //Socket Service handles all socket services used by app
+    const ioService = new IOService(this.io);
+    ioService.init();
     // All business logic will be attached to default namepace /
     this.io.on("connection", (socket) => {
       //Socket Service handles all socket services used by app

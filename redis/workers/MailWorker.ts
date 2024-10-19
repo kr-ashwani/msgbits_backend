@@ -1,5 +1,5 @@
 import mailService from "../../service/mail/mailService";
-import { MailParams } from "../../utilityClasses/mail/Mail";
+import { MailParams } from "../../utils/utilityClasses/mail/Mail";
 import { MailQueueName } from "../queues/MailQueue";
 import BaseWorker from "./BaseWorker";
 import type { Job } from "bullmq";

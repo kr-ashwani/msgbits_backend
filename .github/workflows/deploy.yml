@@ -23,18 +23,13 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-
-    - name: Create .env.production file
-      run: |
-        echo "${{ secrets.ENV_PROD }}" > .env.production    
-
-
     - name: Build and push with Docker Compose
       env:
         DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}
         GITHUB_SHA: ${{ github.sha }}
       run: |
         # Build all services
+        echo "" > .env.production
         docker compose build
 
         # Tag and push each service
@@ -52,11 +47,7 @@ jobs:
           # Tag as latest
           docker tag $image ${DOCKER_REPO}/${service}:latest
           docker push ${DOCKER_REPO}/${service}:latest
-        done
-
-    # Remove the .env.production file after docker operations
-    - name: Cleanup
-      run: rm -f .env.production       
+        done    
         
 
   deploy:
@@ -79,7 +70,6 @@ jobs:
         ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} "mkdir -p ~/msgbits/backend"
         scp -i private_key -o StrictHostKeyChecking=no docker-compose.yml ${USER}@${HOST}:~/msgbits/backend/docker-compose.yml
         scp -i private_key -o StrictHostKeyChecking=no .env.production ${USER}@${HOST}:~/msgbits/backend/.env.production
-
 
     - name: Deploy to EC2
       env:

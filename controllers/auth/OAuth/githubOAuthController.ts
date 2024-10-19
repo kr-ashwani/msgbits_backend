@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { ClientResponse } from "../../../utilityClasses/clientResponse";
 import { oauthProviderService } from "../../../service/database/auth/oauth/OAuthProviderService";
 import { oauthService } from "../../../service/database/auth/oauth/OAuthService";
+import { ClientResponse } from "../../../utils/clientResponse";
 
 export const githubOAuthController = async (req: Request, res: Response) => {
   const clientRes = new ClientResponse(res);

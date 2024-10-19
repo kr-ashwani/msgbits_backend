@@ -1,4 +1,5 @@
-import type Mail from "../utilityClasses/mail/Mail";
+import Mail from "../../utils/utilityClasses/mail/Mail";
+
 interface errorTemplate {
   type: "ERROR_MAIL";
   mail: Mail;

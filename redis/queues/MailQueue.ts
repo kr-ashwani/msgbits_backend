@@ -1,4 +1,3 @@
-import Mail from "../../utilityClasses/mail/Mail";
 import BaseQueue from "./BaseQueue";
 
 class MailQueue<DataType, ResultType> extends BaseQueue<DataType, ResultType> {

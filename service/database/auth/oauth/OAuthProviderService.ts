@@ -4,7 +4,7 @@ import AuthenticationError from "../../../../errors/httperror/AuthenticationErro
 import { OAuthUserSchema } from "../../../../schema/user/OAuthUserSchema";
 import { OAuth2Client } from "google-auth-library";
 import config from "config";
-import handleError from "../../../../errorhandler/ErrorHandler";
+import handleError from "../../../../errors/errorhandler/ErrorHandler";
 
 class OAuthProviderService {
   static GOOGLE_CLIENT_ID = config.get<string>("GOOGLE_CLIENT_ID");

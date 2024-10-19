@@ -12,7 +12,7 @@ import {
 } from "mongoose";
 import { RowMapper } from "./RowMapper/RowMapper";
 import { MathUtil } from "../utils/MathUtil";
-import { OAuthUserInput } from "../schema/user/OAuthUserSchema";
+import { OAuthUserInputAuthCodeOpt } from "../schema/user/OAuthUserSchema";
 import randomColor from "randomcolor";
 import { getFileLinkFromLink } from "../utils/getFileLinkFromLink";
 
@@ -22,15 +22,15 @@ type FilterQuery<T> = {
 } & RootQuerySelector<T>;
 
 export type userDoc = Omit<IUser, "createdAt" | "updatedAt" | "comparePassword">;
-class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
+class UserDAO extends DmlDAO<OAuthUserInputAuthCodeOpt, IUser> {
   /**
    *
-   * @param docs OAuthUserInput or OAuthUserInput Array
+   * @param docs OAuthUserInputAuthCodeOpt or OAuthUserInputAuthCodeOpt Array
    * @param rowMapper
    * @param options
    */
   async create(
-    docs: OAuthUserInput | OAuthUserInput[],
+    docs: OAuthUserInputAuthCodeOpt | OAuthUserInputAuthCodeOpt[],
     rowMapper: RowMapper<HydratedDocument<IUser>>,
     options?: CreateOptions
   ) {
@@ -40,7 +40,7 @@ class UserDAO extends DmlDAO<OAuthUserInput, IUser> {
 
       docs.forEach((doc) => {
         const isVerified = doc.isVerified || false;
-        const authCode = MathUtil.generateSecureRandomNumber(6);
+        const authCode = doc.authCode ?? MathUtil.generateSecureRandomNumber(6).toString();
         const authCodeValidTime = doc.isVerified === true ? 0 : Date.now() + 5 * 60 * 1000;
         const authCodeType: "VerifyAccount" = "VerifyAccount";
         const authType = doc.authType;

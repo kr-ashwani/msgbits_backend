@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import handleError from "../../errorhandler/ErrorHandler";
 import { errToAppError } from "../../errors/AppError";
 import DbCollectionMissingError from "../../errors/parameterMissingError/DbCollectionMissingError";
 import LogSchema, { LogSchemaType } from "../../model/log.model";
+import handleError from "../../errors/errorhandler/ErrorHandler";
 
 interface dbLog {
   log: Omit<LogSchemaType, "timestamp">;

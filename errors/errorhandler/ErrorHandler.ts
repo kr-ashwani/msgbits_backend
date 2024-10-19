@@ -1,4 +1,4 @@
-import { AppError } from "../errors/AppError";
+import { AppError } from "../AppError";
 import sendErrToLogger from "./sendErrToLogger";
 import sendMailToAdminIfCritical from "./sendErrToMail";
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import handleError from "../../errorhandler/ErrorHandler";
 import { errToAppError } from "../../errors/AppError";
-import { ClientResponse } from "../../utilityClasses/clientResponse";
+import handleError from "../../errors/errorhandler/ErrorHandler";
+import { ClientResponse } from "../../utils/clientResponse";
 
 const SomethingWentWrongErrorHandler = (
   err: Error,

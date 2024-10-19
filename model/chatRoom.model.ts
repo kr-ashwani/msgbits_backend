@@ -1,4 +1,3 @@
-import { chatRoom } from "./../test/chatRoomData";
 import { Schema, Types, model } from "mongoose";
 
 // Base interface for chat rooms

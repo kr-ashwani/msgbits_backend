@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { ClientResponse } from "../utilityClasses/clientResponse";
 import { authService } from "../service/database/auth/authService";
+import { ClientResponse } from "../utils/clientResponse";
 
 async function validateUserAndRefreshToken(req: Request, res: Response, next: NextFunction) {
   try {
