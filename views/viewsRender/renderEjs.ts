@@ -6,11 +6,11 @@ class RenderEJS {
   private viewLocation = new Map<ViewType, string>();
 
   constructor() {
-    this.viewLocation.set("ERROR_MAIL", path.join(__dirname, "../views/mail/errorTemplate.ejs"));
-    this.viewLocation.set("OTP_MAIL", path.join(__dirname, "../views/otp/otpTemplate.ejs"));
+    this.viewLocation.set("ERROR_MAIL", path.join(__dirname, "../mail/errorTemplate.ejs"));
+    this.viewLocation.set("OTP_MAIL", path.join(__dirname, "../otp/otpTemplate.ejs"));
     this.viewLocation.set(
       "PASSWORD_RESET_MAIL",
-      path.join(__dirname, "../views/mail/forgotPassword.ejs")
+      path.join(__dirname, "../mail/forgotPassword.ejs")
     );
   }
   /**
