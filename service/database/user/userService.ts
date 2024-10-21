@@ -211,6 +211,7 @@ class UserService {
         },
         {
           authCodeValidTime: 0,
+          password: input.password,
         },
         new UserRowMapper((data) => {
           user.push(data);
@@ -218,6 +219,7 @@ class UserService {
       );
 
       if (user.length !== 1) throw new AuthenticationError("Something went wrong");
+      return resSchemaForModel.getUser(user[0]);
     } catch (err) {
       throw err;
     }
