@@ -14,6 +14,7 @@ import { IOManager } from "../../socket/SocketIOManager/IOManager";
 import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
 import { chatRoomService } from "../database/chat/chatRoom/chatRoomService";
 import RedisConnection from "../../redis/redisConnection";
+import { omit } from "lodash";
 
 export class SocketWebRTCService {
   private socket: SocketManager;
@@ -45,31 +46,45 @@ export class SocketWebRTCService {
     this.socket.on("webrtc-iceCandidate", this.handleIceCandidate);
     this.socket.on("webrtc-mediaStateChange", this.handleMediaStateChange);
     this.socket.on("webrtc-roomFull", this.handleRoomFull);
+
+    this.socket.onDisconnect(this.handleSocketDisconnect.bind(this));
   }
+  private handleSocketDisconnect() {
+    this.removeActiveParticipants(this.userId);
+  }
+
   private handleStartCall = async (payload: IWebRTCStartCall) => {
-    const { chatRoomId, callId, userId } = payload;
+    const { callId } = payload;
 
     await this.addActiveParticipants("new", callId, this.userId);
-    const participants = await this.getOtherParticipants(chatRoomId);
+    const participants = await this.getOtherParticipants(callId);
 
-    participants.forEach((memId) => this.socket.to(memId).emit("webrtc-incomingCall", payload));
+    participants.forEach((memberId) =>
+      this.socket.to(memberId).emit("webrtc-incomingCall", payload)
+    );
   };
 
   private handleEndCall = async (payload: IWebRTCEndCall) => {
     const { callId } = payload;
 
-    await this.removeActiveParticipants(callId, this.userId);
-    const participants = await this.getActiveParticipants(callId);
-
-    participants.forEach((memId) => this.socket.to(memId).emit("webrtc-endCall", payload));
+    const participants = await this.getOtherParticipants(callId);
+    await this.removeActiveParticipants(this.userId);
+    participants.forEach((memberId) => this.socket.to(memberId).emit("webrtc-endCall", payload));
   };
 
   private handleGetActiveParticipants = async (payload: IWebRTCGetActiveParticipants) => {
-    const { callId, chatRoomId } = payload;
+    const { callId } = payload;
     await this.addActiveParticipants("existing", callId, this.userId);
 
     const participants = await this.getActiveParticipants(callId);
-    participants.forEach((memId) => this.socket.to(memId).emit("webrtc-joinCall", payload));
+    participants.forEach((memberId) =>
+      this.socket
+        .to(memberId)
+        .emit(
+          "webrtc-joinCall",
+          omit({ ...payload, from: this.userId, to: memberId }, "activeParticipants")
+        )
+    );
     this.socket.emit("webrtc-getActiveParticipants", {
       ...payload,
       activeParticipants: participants,
@@ -78,34 +93,23 @@ export class SocketWebRTCService {
   private handleOffer = async (payload: IWebRTCOffer) => {
     const { callId } = payload;
 
-    const participants = await this.getActiveParticipants(callId);
-    participants.forEach((memId) =>
-      this.socket.to(memId).emit("webrtc-offer", { ...payload, userId: this.userId })
-    );
+    const destinationSocketid = await this.getSocketIdOfUser(payload.to);
+    this.socket.to(destinationSocketid).emit("webrtc-offer", payload);
   };
   private handleAnswer = async (payload: IWebRTCAnswer) => {
     const { callId } = payload;
-
-    const participants = await this.getActiveParticipants(callId);
-    participants.forEach((memId) =>
-      this.socket.to(memId).emit("webrtc-answer", { ...payload, userId: this.userId })
-    );
+    const destinationSocketid = await this.getSocketIdOfUser(payload.to);
+    this.socket.to(destinationSocketid).emit("webrtc-answer", payload);
   };
   private handleIceCandidate = async (payload: IWebRTCIceCandidate) => {
     const { callId } = payload;
-
-    const participants = await this.getActiveParticipants(callId);
-    participants.forEach((memId) =>
-      this.socket.to(memId).emit("webrtc-iceCandidate", { ...payload, userId: this.userId })
-    );
+    const destinationSocketid = await this.getSocketIdOfUser(payload.to);
+    this.socket.to(destinationSocketid).emit("webrtc-iceCandidate", payload);
   };
   private handleMediaStateChange = async (payload: IWebRTCMediaStateChange) => {
     const { callId } = payload;
-
-    const participants = await this.getActiveParticipants(callId);
-    participants.forEach((memId) =>
-      this.socket.to(memId).emit("webrtc-mediaStateChange", { ...payload, userId: this.userId })
-    );
+    const destinationSocketid = await this.getSocketIdOfUser(payload.to);
+    this.socket.to(destinationSocketid).emit("webrtc-mediaStateChange", payload);
   };
 
   private handleRoomFull = async () => {};
@@ -121,6 +125,11 @@ export class SocketWebRTCService {
 
     if (type === "new" && keyExists) throw new Error("Call session already exists");
     if (type === "existing" && !keyExists) throw new Error("call session doesnot exists");
+
+    await this.redisClient.hset(`call_user:${userId}`, {
+      callId,
+      socketId: this.socket.getSocketId(),
+    });
 
     const isParticipant = await this.redisClient.sismember(
       `call:${callId}:active_participants`,
@@ -138,7 +147,14 @@ export class SocketWebRTCService {
     if (!participants?.length) return [];
     return participants.filter((memId) => memId !== this.userId);
   }
-  private async removeActiveParticipants(callId: string, userId: string) {
+  private async removeActiveParticipants(userId: string) {
+    const userCallInfo = await this.redisClient.hgetall(`call_user:${userId}`);
+
+    const { callId, socketId } = userCallInfo;
+    if (!callId || !socketId) return;
+
+    if (socketId !== this.socket.getSocketId()) return;
+
     const isParticipant = await this.redisClient.sismember(
       `call:${callId}:active_participants`,
       userId
@@ -147,6 +163,7 @@ export class SocketWebRTCService {
     if (!isParticipant) throw new Error("User not found in call");
 
     await this.redisClient.srem(`call:${callId}:active_participants`, userId);
+    await this.redisClient.del(`call_user:${userId}`);
 
     // Get remaining members count
     const remainingMembers = await this.redisClient.scard(`call:${callId}:active_participants`);
@@ -158,5 +175,13 @@ export class SocketWebRTCService {
     }
 
     return { empty: false };
+  }
+  private async getSocketIdOfUser(userId: string) {
+    const userCallInfo = await this.redisClient.hgetall(`call_user:${userId}`);
+
+    const { callId, socketId } = userCallInfo;
+    if (!callId || !socketId) return "";
+
+    return socketId;
   }
 }

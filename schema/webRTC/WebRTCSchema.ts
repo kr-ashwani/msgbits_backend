@@ -18,21 +18,17 @@ const CallTypeEnum = z.enum(["audio", "video"]);
 
 // Base schema with common fields
 const BaseSchema = z.object({
-  userId: z.string({
-    required_error: "User ID is required",
-    invalid_type_error: "User ID must be a string",
+  to: z.string({
+    required_error: "Destination user ID is required",
+    invalid_type_error: "Destination user ID must be a string",
+  }),
+  from: z.string({
+    required_error: "Source user ID is required",
+    invalid_type_error: "Source user ID must be a string",
   }),
   callId: z.string({
     required_error: "Call ID is required",
     invalid_type_error: "Call ID must be a string",
-  }),
-});
-
-// Base schema with chatRoomId
-const BaseRoomSchema = BaseSchema.extend({
-  chatRoomId: z.string({
-    required_error: "Room ID is required",
-    invalid_type_error: "Room ID must be a string",
   }),
 });
 
@@ -41,13 +37,13 @@ export const WebRTCIceCandidateSchema = BaseSchema.extend({
   candidate: RTCIceCandidateSchema,
 });
 
-export const WebRTCStartCallSchema = BaseRoomSchema.extend({
+export const WebRTCStartCallSchema = BaseSchema.extend({
   callType: CallTypeEnum,
 });
-export const WebRTCJoinCallSchema = BaseRoomSchema;
-export const WebRTCEndCallSchema = BaseRoomSchema;
+export const WebRTCJoinCallSchema = BaseSchema;
+export const WebRTCEndCallSchema = BaseSchema;
 
-export const WebRTCIncomingCallSchema = BaseRoomSchema.extend({
+export const WebRTCIncomingCallSchema = BaseSchema.extend({
   callType: CallTypeEnum,
 });
 
@@ -77,7 +73,7 @@ export const WebRTCRoomFullSchema = BaseSchema.extend({
   }),
 });
 
-export const WebRTCGetActiveParticipantsSchema = BaseRoomSchema.extend({
+export const WebRTCGetActiveParticipantsSchema = BaseSchema.extend({
   activeParticipants: z.array(z.string()),
 });
 
