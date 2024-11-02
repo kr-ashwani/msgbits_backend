@@ -42,6 +42,7 @@ import {
   WebRTCIceCandidateSchema,
   WebRTCMediaStateChangeSchema,
   WebRTCRoomFullSchema,
+  IWebRTCCallInfo,
 } from "../../schema/webRTC/WebRTCSchema";
 export interface ChatRoomEmitterMapping {
   "chatroom-create": ChatRoomDTO;
@@ -77,6 +78,7 @@ export interface SyncEmitterMapping {
     chatUser: ChatUserDTO[];
   };
   "sync-allUserStatus": string[];
+  "sync-chatRoomCallSession": IWebRTCCallInfo[];
 }
 export interface WebRTCEmitterMapping {
   "webrtc-startCall": IWebRTCStartCall;
@@ -90,6 +92,7 @@ export interface WebRTCEmitterMapping {
   "webrtc-iceCandidate": IWebRTCIceCandidate;
   "webrtc-mediaStateChange": IWebRTCMediaStateChange;
   "webrtc-roomFull": IWebRTCRoomFull;
+  "webrtc-callSessionTerminated": string;
 }
 
 export type EmitterMapping = ChatRoomEmitterMapping &

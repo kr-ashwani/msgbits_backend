@@ -31,7 +31,10 @@ export class UserStatusTracker {
   };
 
   constructor() {
-    this.redisClient = new RedisConnection(UserStatusTracker.redisConfig).getConnection();
+    this.redisClient = new RedisConnection(
+      UserStatusTracker.redisConfig,
+      "User Status Tracker"
+    ).getConnection();
     this.batchTimer = setInterval(() => this.processBatchedHeartbeats(), BATCH_INTERVAL);
     this.offlineBatchTimer = setInterval(() => this.removeOfflineUsers(), OFFLINE_BATCH_INTERVAL);
   }

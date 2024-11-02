@@ -7,6 +7,7 @@ import { SocketManager } from "../../socket/SocketIOManager/SocketManager";
 import { chatRoomService } from "../database/chat/chatRoom/chatRoomService";
 import { chatUserService } from "../database/chat/chatUser/chatUser";
 import { messageService } from "../database/chat/message/messageService";
+import { callingService } from "./CallingService";
 
 export class SocketSyncService {
   private socket: SocketManager;
@@ -75,6 +76,11 @@ export class SocketSyncService {
       message: messagesOut,
       chatUser,
     });
+
+    const chatRoomIds = chatRoomOut.map((room) => room.chatRoomId);
+    const activeChatRoomIds = await callingService.getActiveCallSession(chatRoomIds);
+
+    this.socket.emit("sync-chatRoomCallSession", activeChatRoomIds);
   };
 
   private getSmallerTime = (timeA: string | null, timeB: string | null): string | null => {
