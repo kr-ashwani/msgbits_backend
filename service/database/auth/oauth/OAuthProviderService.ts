@@ -39,6 +39,7 @@ class OAuthProviderService {
       });
 
       const payload: any = ticket.getPayload();
+      payload.picture = payload.picture.replace(/s\d+-c/, `s${800}-c`); // get higher quality of picture
 
       const googlePayload = OAuthUserSchema.parse({
         email: payload.email,

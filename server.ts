@@ -28,6 +28,7 @@ import validateUserAndRefreshToken from "./middleware/validateUserAndRefreshToke
 import { SocketService } from "./service/socket/SocketService";
 import { AdminSocketService } from "./service/socket/admin/AdminSocketService";
 import { IOService } from "./service/socket/IOService";
+import helmet from "helmet";
 
 class App {
   private readonly app;
@@ -65,6 +66,7 @@ class App {
   }
   private init() {
     this.initializeCORS();
+    this.initializeSecurityHeaders();
     this.initializeMiddlewares();
     this.initializeRoutes();
     this.initializeSocketHandlers();
@@ -133,6 +135,14 @@ class App {
   // Error Handler middleware must be used at the end
   private initializeErrorHandlerMidleware() {
     registerErrorHandler(this.app);
+  }
+
+  private initializeSecurityHeaders() {
+    this.app.use(helmet());
+    this.app.use((req, res, next) => {
+      res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+      next();
+    });
   }
 
   // app handler will be called by public function run when express

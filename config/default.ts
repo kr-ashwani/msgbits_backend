@@ -24,4 +24,7 @@ export default {
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
   S3_BUCKET: process.env.S3_BUCKET,
+  STUN_URL: process.env.STUN_URL,
+  TURN_URL: process.env.TURN_URL,
+  TURN_STATIC_AUTH_SECRET: process.env.TURN_STATIC_AUTH_SECRET,
 };
