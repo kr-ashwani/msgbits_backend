@@ -31,7 +31,6 @@ class WebrtcService {
         .update(username)
         .digest("base64");
 
-      console.log({ username, credential });
       return {
         stunUrl: this.STUN_URL,
         turnUrl: this.TURN_URL,
